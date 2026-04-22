@@ -1,3 +1,5 @@
+v1.07d
+
 For Pi or Linux..
 
 Build out your environment below.
