@@ -34,7 +34,7 @@ Step 4 — Clone the repo
 git clone https://github.com/drexjj/zbitxfrontpanel
 ```
 
-Step 5 — Build the files
+Step 5 — Build the files in the zbitxfrontpanel directory
 
 ```console
 arduino-cli compile \
