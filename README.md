@@ -8,7 +8,7 @@ Step 1 — Install Arduino CLI...
 ```console
 curl -fsSL https://raw.githubusercontent.com/arduino/arduino-cli/master/install.sh | sh
 sudo mv bin/arduino-cli /usr/local/bin/
-arduino-cli version   # confirm it works
+arduino-cli version
 ```
 
 Step 2 — Initialize config and install the RP2040 board package...
