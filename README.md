@@ -1,4 +1,4 @@
-v1.07d
+Current version is 1.07d
 
 Build out your environment below on Pi or Linux...
 
