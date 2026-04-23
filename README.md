@@ -38,9 +38,13 @@ Step 5 — Build the files in the zbitxfrontpanel directory
 
 ```console
 arduino-cli compile \
-  --fqbn rp2040:rp2040:rpipico \
+  --fqbn rp2040:rp2040:rpipicow \
   --output-dir ./build \
   .
 ```
 
 Step 6 — Go into the build folder and copy your uf2 file to the zbitx
+
+
+Notes:
+You can also change the version number displayed in the zbitxfrontpanel.ino file
