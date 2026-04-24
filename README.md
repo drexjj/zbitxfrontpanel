@@ -38,7 +38,7 @@ Step 5 — Build the files in the zbitxfrontpanel directory
 
 ```console
 arduino-cli compile \
-  --fqbn rp2040:rp2040:rpipicow \
+  --fqbn rp2040:rp2040:rpipico2w \
   --output-dir ./build \
   .
 ```
