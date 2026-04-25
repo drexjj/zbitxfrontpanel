@@ -113,23 +113,36 @@ struct field *dialog_box(const char *title, char const *fields_list){
 
 void field_set_panel(const char *mode){
   char list[100];
- 
+
   field_clear_all();
-	keyboard_hide(); //fwiw
+  keyboard_hide(); //fwiw
+
+  // Adjust the waterfall width to match the panel layout.
+  // FT8 and CW/CWR share the right pane with other widgets (FT8_LIST /
+  // CONSOLE), so the waterfall stays at 240 px (left half only).
+  // All voice / digital modes (USB, LSB, AM, DIGI, 2TONE) have nothing in
+  // the right pane, so the waterfall expands to the full 480 px width.
+  struct field *f_wf = field_get("WF");
+
   if (!strcmp(mode, "FT8")){
-    strcpy(list,"ESC/F1/F2/F3/F4/F5/TX_PITCH/AUTO/TX1ST/FT8_REPEAT/FT8_LIST/WF");
-	}
+    strcpy(list, "ESC/F1/F2/F3/F4/F5/TX_PITCH/AUTO/TX1ST/FT8_REPEAT/FT8_LIST/WF");
+    if (f_wf){ f_wf->w = 240; f_wf->redraw = true; }
+  }
   else if (!strcmp(mode, "CW") || !strcmp(mode, "CWR")){
     strcpy(list, "ESC/F1/F2/F3/F4/F5/F6/F7/PITCH/WPM/TEXT/CONSOLE/WF");
-	}  
-  else
-    strcpy(list, "MIC/TX/RX/WF/CONSOLE");  
+    if (f_wf){ f_wf->w = 240; f_wf->redraw = true; }
+  }
+  else {
+    // USB, LSB, AM, DIGI, 2TONE — full-width waterfall, no console box.
+    strcpy(list, "MIC/TX/RX/WF");
+    if (f_wf){ f_wf->w = SCREEN_WIDTH; f_wf->redraw = true; }
+  }
 
   //clear the bottom row
   screen_fill_rect(0, SCREEN_HEIGHT - 48, SCREEN_WIDTH, 48, SCREEN_BACKGROUND_COLOR);
-  //clear the right pane
+  //clear the right pane (always wipe so a previous console is erased)
   screen_fill_rect(240, 48, 240, SCREEN_HEIGHT - 96, SCREEN_BACKGROUND_COLOR);
-  
+
   char *p = strtok(list, "/");
   while (p){
     field_show(p, true);
@@ -179,23 +192,20 @@ void field_set(const char *label, const char *value, bool update_to_radio){
     f->redraw = true;
   }
   else if (!strcmp(f->label, "WF")){
-    uint8_t spectrum[250];
-    if (f->w > sizeof(spectrum)){
-      Serial.println("#waterfall is too large");
-      return;
-    }
-    //scale the values to fit the width
-    //adjust the offset by space character
+    // The internal waterfall buffer is always 240 columns wide (WF_BUF_W).
+    // waterfall_draw() handles stretching to f->w at render time, so we
+    // always produce exactly 240 samples here — no matter what f->w is.
+    // This prevents a buffer overrun when the WF field is 480 px wide.
+    uint8_t spectrum[240];
     int count = strlen(value);
-    //we take 240 points on the waterfall 
-    //and zzom it in/out
-    double scale = count/240.0;
-    for (int d = 0; d < f->w; d++){
-			int i = (scale * d);
-      int v = value[i]-32;
-      spectrum[d] = v;
+    double scale = count / 240.0;
+    for (int d = 0; d < 240; d++){
+      int i = (int)(scale * d);
+      if (i >= count) i = count - 1;
+      int v = value[i] - 32;
+      if (v < 0) v = 0;
+      spectrum[d] = (uint8_t)v;
     }
-    //always 250 points
     waterfall_update(f, spectrum);
   }
   //else if (strlen(value) < FIELD_TEXT_MAX_LENGTH - 1){
@@ -251,7 +261,17 @@ struct field *field_select(const char *label){
 		return NULL;
 
 	if (!strcmp(f->label, "MENU")){
-		dialog_box("Radio", "10M/12M/15M/17M/20M/30M/40M/60M/80M/AGC/VFO/SPLIT/CLOSE");
+		struct field *choice = dialog_box("Radio", "10M/12M/15M/17M/20M/30M/40M/60M/80M/AGC/VFO/SPLIT/SHUTDOWN/CLOSE");
+		if (choice && !strcmp(choice->label, "SHUTDOWN")){
+			// Ask the user to confirm before powering off.
+			struct field *confirm = dialog_box("Shutdown zBitx OS?", "OK/CANCEL");
+			if (confirm && !strcmp(confirm->label, "OK")){
+				// Send "SHUTDOWN" to the Pi Zero W over I2C.
+				// The Pi's zBitx software must handle this command with
+				// something like: system("sudo poweroff");
+				strcpy(message_buffer, "SHUTDOWN\n");
+			}
+		}
 		return NULL;
 	}
 
@@ -344,6 +364,10 @@ struct field *field_select(const char *label){
 	}
 
   // emit the new value of the field to the radio
+  // SHUTDOWN must never be auto-posted — the I2C message is sent only
+  // after the user confirms on the second dialog (see the MENU handler above).
+  if (!strcmp(f->label, "SHUTDOWN"))
+    return f;
 	field_post_to_radio(f);
   return f;
 }

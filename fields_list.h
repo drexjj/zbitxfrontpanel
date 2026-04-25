@@ -143,7 +143,7 @@ struct field main_list[] = {
 
 	{FIELD_TITLE, 24, 8, SCREEN_WIDTH-96, 48, TFT_BLACK, "TITLE", "Hi", ""}, 	
 	{FIELD_STATIC, 24, 96, SCREEN_WIDTH-96,  100, TFT_BLACK, "MESSAGE", "Hi", ""}, 	
-  {FIELD_BUTTON, 24, 248, 96, 48, TFT_GREEN, "OK", ""},   
+  {FIELD_BUTTON, 24, 248, 96, 48, TFT_RED, "OK", ""},   
   {FIELD_BUTTON, 24, 248, 96, 48, TFT_RED, "DELETE", ""},   
   {FIELD_BUTTON, 24, 248, 96, 48, TFT_BLACK, "CLOSE", ""},   
   {FIELD_BUTTON, 140, 248, 96, 48, TFT_BLUE, "CANCEL", ""},
@@ -160,7 +160,9 @@ struct field main_list[] = {
   {FIELD_BUTTON, 408, 48, 48, 48,  TFT_BLACK, "80M", "1"},
   {FIELD_SELECTION, 24, 96, 48, 48,  TFT_BLACK, "AGC", "MED", "OFF/SLOW/MED/FAST"},
   {FIELD_SELECTION, 72, 96, 48, 48,  TFT_BLACK, "VFO", "A", "A/B"},
-  {FIELD_SELECTION, 120, 96, 48, 48,  TFT_BLACK, "SPLIT", "OFF", "ON/OFF"},  
+  {FIELD_SELECTION, 120, 96, 48, 48,  TFT_BLACK, "SPLIT", "OFF", "ON/OFF"},
+  /* Shutdown button — only shown inside the MENU dialog, lower-right corner */
+  {FIELD_BUTTON, 360, 248, 96, 48,  TFT_RED, "SHUTDOWN", ""},
 	/* settings */
 
   {FIELD_STATIC, 26,48, 96, 0, TFT_BLACK, "MY CALL", "MY CALL:", "0/10"},
