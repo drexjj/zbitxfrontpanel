@@ -1,0 +1,2 @@
+compiler.cpp.extra_flags=-DUSER_SETUP_LOADED=1 -DILI9488_DRIVER=1
+build.extra_flags=-DUSER_SETUP_LOADED=1 -DILI9488_DRIVER=1
