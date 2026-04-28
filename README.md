@@ -3,7 +3,7 @@
 ## Build out your environment below on Pi or Linux
 
 
-## Step 1 — Install Arduino CLI...
+## Step 1 — Install Arduino CLI
 
 ```console
 curl -fsSL https://raw.githubusercontent.com/arduino/arduino-cli/master/install.sh | sh
