@@ -1,4 +1,5 @@
-#include <TFT_eSPI.h>       // Hardware-specific library
+#include "tft_ili9488.h"
+#include <pico/sync.h>
 #include "zbitx.h"
 #include "logbook.h"
 #include "ft8.h"
@@ -8,10 +9,7 @@
 
 struct field *f_selected = NULL;
 extern int vswr, vfwd, vref, vbatt;
-
-
-//void field_draw(struct field *f, bool all);
-
+static bool redraw_screen = false;
 struct field *field_list;
 
 /* Fields are controls that hold radio's controls values, they are also buttons, text fields, multiple selections, etc.
@@ -51,6 +49,7 @@ void field_clear_all(){
     f->redraw = true;
     count++;
   }
+  redraw_screen = true;
 }
 
 struct field *field_get(const char *label){
@@ -97,10 +96,11 @@ struct field *dialog_box(const char *title, char const *fields_list){
 	struct field *f_touched = NULL;
 	f_selected = NULL;
 
-	while(1){	
+	while(1){
+		core1_time = millis(); // prevent Core 0 watchdog from restarting Core 1
 		f_touched = ui_slice();
 		if (f_touched && f_touched->type == FIELD_BUTTON){
-			break;	
+			break;
 		}
 		delay(10);
 	}
@@ -113,46 +113,37 @@ struct field *dialog_box(const char *title, char const *fields_list){
 
 void field_set_panel(const char *mode){
   char list[100];
-
+ 
   field_clear_all();
-  keyboard_hide(); //fwiw
-
-  // Adjust the waterfall width to match the panel layout.
-  // FT8 and CW/CWR share the right pane with other widgets (FT8_LIST /
-  // CONSOLE), so the waterfall stays at 240 px (left half only).
-  // All voice / digital modes (USB, LSB, AM, DIGI, 2TONE) have nothing in
-  // the right pane, so the waterfall expands to the full 480 px width.
-  struct field *f_wf = field_get("WF");
-
+	keyboard_hide(); //fwiw
   if (!strcmp(mode, "FT8")){
-    strcpy(list, "ESC/F1/F2/F3/F4/F5/TX_PITCH/AUTO/TX1ST/FT8_REPEAT/FT8_LIST/WF");
-    if (f_wf){ f_wf->w = 240; f_wf->redraw = true; }
-  }
+    strcpy(list,"ESC/F1/F2/F3/F4/F5/TX_PITCH/AUTO/TX1ST/FT8_REPEAT/FT8_LIST/WF");
+	}
   else if (!strcmp(mode, "CW") || !strcmp(mode, "CWR")){
     strcpy(list, "ESC/F1/F2/F3/F4/F5/F6/F7/PITCH/WPM/TEXT/CONSOLE/WF");
-    if (f_wf){ f_wf->w = 240; f_wf->redraw = true; }
-  }
-  else {
-    // USB, LSB, AM, DIGI, 2TONE — full-width waterfall, no console box.
-    strcpy(list, "MIC/TX/RX/WF");
-    if (f_wf){ f_wf->w = SCREEN_WIDTH; f_wf->redraw = true; }
-  }
+	}  
+  else
+    strcpy(list, "MIC/TX/RX/WF/CONSOLE");  
 
-  //clear the bottom row
-  screen_fill_rect(0, SCREEN_HEIGHT - 48, SCREEN_WIDTH, 48, SCREEN_BACKGROUND_COLOR);
-  //clear the right pane (always wipe so a previous console is erased)
-  screen_fill_rect(240, 48, 240, SCREEN_HEIGHT - 96, SCREEN_BACKGROUND_COLOR);
-
+  
   char *p = strtok(list, "/");
   while (p){
     field_show(p, true);
     p = strtok(NULL, "/");
   }
+  redraw_screen = true;
+  //clear the bottom row
+  //screen_fill_rect(0, SCREEN_HEIGHT - 48, SCREEN_WIDTH, 48, SCREEN_BACKGROUND_COLOR);
+  //clear the right pane
+  //screen_fill_rect(240, 48, 240, SCREEN_HEIGHT - 96, SCREEN_BACKGROUND_COLOR);
 }
 
 //set from the radio to the front panel
 void field_set(const char *label, const char *value, bool update_to_radio){
   struct field *f;
+
+  if (strstr(label, "SPECTRUM"))
+    return;
 
   //translate a few fields 
   if (!strcmp(label, "9") || !strcmp(label, "10") || !strcmp(label, "5"))
@@ -166,8 +157,10 @@ void field_set(const char *label, const char *value, bool update_to_radio){
   else 
     f = field_get(label);
 
-  if (!f)
+  if (!f){
     return;
+  }
+  //Serial.printf("%s = %s \n", label, value);
 
   if (update_to_radio)
 		field_post_to_radio(f);
@@ -180,32 +173,34 @@ void field_set(const char *label, const char *value, bool update_to_radio){
 		}
 	}
 	
-   //these are messages of FT8
+  //these are messages of FT8
   if(!strcmp(f->label, "FT8_LIST")){
     ft8_update(value);
     f->redraw = true;
   }
-	
   //cw decoded text
   else if (!strcmp(f->label, "CONSOLE")){
     console_update(f, label, value);  
     f->redraw = true;
   }
   else if (!strcmp(f->label, "WF")){
-    // The internal waterfall buffer is always 240 columns wide (WF_BUF_W).
-    // waterfall_draw() handles stretching to f->w at render time, so we
-    // always produce exactly 240 samples here — no matter what f->w is.
-    // This prevents a buffer overrun when the WF field is 480 px wide.
-    uint8_t spectrum[240];
-    int count = strlen(value);
-    double scale = count / 240.0;
-    for (int d = 0; d < 240; d++){
-      int i = (int)(scale * d);
-      if (i >= count) i = count - 1;
-      int v = value[i] - 32;
-      if (v < 0) v = 0;
-      spectrum[d] = (uint8_t)v;
+    uint8_t spectrum[300];
+    if (f->w > sizeof(spectrum)){
+      Serial.println("#waterfall is too large");
+      return;
     }
+    //scale the values to fit the width
+    //adjust the offset by space character
+    int count = strlen(value);
+    //we take 240 points on the waterfall 
+    //and zzom it in/out
+    double scale = count/240.0;
+    for (int d = 0; d < f->w && d < sizeof(spectrum); d++){
+			int i = (scale * d);
+      int v = value[i]-32;
+      spectrum[d] = v;
+    }
+    //always 250 points
     waterfall_update(f, spectrum);
   }
   //else if (strlen(value) < FIELD_TEXT_MAX_LENGTH - 1){
@@ -261,17 +256,7 @@ struct field *field_select(const char *label){
 		return NULL;
 
 	if (!strcmp(f->label, "MENU")){
-		struct field *choice = dialog_box("Radio", "10M/12M/15M/17M/20M/30M/40M/60M/80M/AGC/VFO/SPLIT/SHUTDOWN/CLOSE");
-		if (choice && !strcmp(choice->label, "SHUTDOWN")){
-			// Ask the user to confirm before powering off.
-			struct field *confirm = dialog_box("Shutdown zBitx OS?", "OK/CANCEL");
-			if (confirm && !strcmp(confirm->label, "OK")){
-				// Send "SHUTDOWN" to the Pi Zero W over I2C.
-				// The Pi's zBitx software must handle this command with
-				// something like: system("sudo poweroff");
-				strcpy(message_buffer, "SHUTDOWN\n");
-			}
-		}
+		dialog_box("Radio", "10M/12M/15M/17M/20M/30M/40M/60M/80M/AGC/VFO/SPLIT/CLOSE");
 		return NULL;
 	}
 
@@ -364,10 +349,6 @@ struct field *field_select(const char *label){
 	}
 
   // emit the new value of the field to the radio
-  // SHUTDOWN must never be auto-posted — the I2C message is sent only
-  // after the user confirms on the second dialog (see the MENU handler above).
-  if (!strcmp(f->label, "SHUTDOWN"))
-    return f;
 	field_post_to_radio(f);
   return f;
 }
@@ -506,14 +487,10 @@ void smeter_draw(struct field *f){
 	char temp_str[100];
 	static int count = 0;
 
-	if (count++ % 25)
+	if (count++ % 5)
 		return;
 
 	screen_fill_rect(f->x, f->y, f->w, f->h, TFT_BLACK);
-
-	int v = vbatt/10;
-	sprintf(temp_str, "+%d.%dv", v/10, v%10);
-	screen_draw_text(temp_str, -1, f->x + 155, f->y+1, TFT_WHITE, 1);
 
 	struct field *f_tx = field_get("IN_TX");
 	if (!f_tx){
@@ -522,7 +499,7 @@ void smeter_draw(struct field *f){
 	}
 	int in_tx = atoi(f_tx->value);
 	 if (in_tx){
-		sprintf(temp_str, "%d W            SWR %d.%d", vfwd/10, vswr/10, vswr%10); 
+		sprintf(temp_str, "%d W            SWR %d.%d", (vfwd * vfwd)/100, vswr/10, vswr%10); 
 		screen_draw_text(temp_str, -1, f->x + 3, f->y + 1, TFT_WHITE, 2);
 		screen_draw_rect(f->x + 33,  f->y + 2, 60, 12, TFT_YELLOW);
 		screen_fill_rect(f->x + 34,  f->y + 3, vfwd, 10, TFT_RED);
@@ -553,6 +530,11 @@ void smeter_draw(struct field *f){
 		screen_draw_text(temp_str, -1, f->x + 5 + (i * 20), f->y+7, TFT_WHITE, 1);
 		//screen_draw_text(temp_str, -1, f->x + 130, f->y+6, TFT_WHITE, 1);
 	}
+  int v = vbatt/10;
+	sprintf(temp_str, "+%d.%dv", v/10, v%10);
+	screen_draw_text(temp_str, -1, f->x + 150, f->y + 1, TFT_WHITE, 1);
+  //Serial.printf("%s at %d %d\n", temp_str, f->x + 100, f->y+1);
+
 }
 
 void field_static_draw(field *f){
@@ -625,7 +607,7 @@ void field_draw(struct field *f){
 			logbook_draw(f);
 			break;
 		case FIELD_SMETER:
-			//smeter_draw(f);
+			smeter_draw(f);
 			return; // don't fall into the default background painting
     default:
 			{
@@ -783,10 +765,18 @@ void field_input(uint8_t input){
   f_selected->redraw = true;
 }
 
+void field_tapped(struct field *f, uint16_t x, uint16_t y){
+  if (f->type == FIELD_FT8){
+    ft8_touched(x - f->x, y - f->y);
+    f->redraw = true;
+  }
+}
+
+
 void field_draw_all(bool all){
   struct field *f;
 
-  if (all)
+  if (all || redraw_screen)
     screen_fill_rect(0,0,SCREEN_WIDTH, SCREEN_HEIGHT,SCREEN_BACKGROUND_COLOR);
 	
   for (f = field_list; f->type != -1; f++)
@@ -799,4 +789,5 @@ void field_draw_all(bool all){
     }
 	f = field_get("METERS");
 	smeter_draw(f);
+  redraw_screen = false;
 }

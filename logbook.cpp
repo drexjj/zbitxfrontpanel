@@ -1,5 +1,5 @@
 #include <Arduino.h>
-#include <TFT_eSPI.h>
+#include "tft_ili9488.h"
 #include "zbitx.h"
 #include "logbook.h"
 
@@ -51,6 +51,7 @@ void logbook_update(const char *update_str){
 		rst_recv[10], exchange_sent[10], exchange_recv[10], contact_callsign[10],
 		buff[200], *record;
 
+	Serial1.printf("log %s\n", update_str);
 	strcpy(buff, update_str);
 	record = buff;
 	//read the QSO id  

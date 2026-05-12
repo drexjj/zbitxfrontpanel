@@ -1,5 +1,5 @@
 #include <Arduino.h>
-#include <TFT_eSPI.h>       // Hardware-specific library
+#include "tft_ili9488.h"
 #include "zbitx.h"
 #include "text_field.h"
 

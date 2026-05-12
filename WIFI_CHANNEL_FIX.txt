@@ -1,0 +1,121 @@
+FIXING zBitx <-> FRONT PANEL WiFi STALLS
+==========================================
+
+If the front panel keeps stalling, freezing the display, or repeatedly
+"reconnecting" to the radio, the most common cause is a WiFi channel
+mismatch on the Pi inside the zBitx.
+
+The Pi has only ONE physical WiFi radio. That single radio is shared
+by two roles:
+
+  1. wlan0  -- the Pi's connection to your home/shack WiFi router.
+  2. uap0   -- the access point that the front panel (Pico) connects to.
+
+If wlan0 and uap0 are running on DIFFERENT 2.4 GHz channels, the radio
+has to keep switching back and forth between them. Packets get dropped
+on whichever side isn't being served at the moment, which is what you
+experience as "stalling" or "reconnecting".
+
+The fix is to put both interfaces on the SAME channel.
+
+
+STEP 1 - SSH into the zBitx
+---------------------------
+
+From a computer on the same network, open a terminal and type:
+
+    ssh pi@sbitx.local
+
+The default password is:  hf12345
+
+(If 'sbitx.local' doesn't resolve, use the Pi's IP address instead --
+check your home router's "connected devices" list to find it.)
+
+
+STEP 2 - Find the channel your home WiFi is using
+-------------------------------------------------
+
+On the zBitx, type:
+
+    iw dev wlan0 info
+
+Look for the line that says:
+
+    channel N (... MHz), width: ...
+
+Note that channel number N. Example output:
+
+    channel 5 (2432 MHz), width: 20 MHz, center1: 2432 MHz
+
+Here the channel is 5.
+
+
+STEP 3 - Check the channel the front panel AP is using
+------------------------------------------------------
+
+Type:
+
+    iw dev uap0 info
+
+Look at the channel line again. If this number MATCHES what you got
+in Step 2, you're already aligned -- the stalling is something else.
+If they DON'T match, continue to Step 4.
+
+
+STEP 4 - Update the AP channel to match
+---------------------------------------
+
+Edit the AP configuration file with:
+
+    sudo nano /etc/hostapd/hostapd.conf
+
+Find the line that starts with:
+
+    channel=
+
+and change the number after the equals sign to match your wlan0
+channel from Step 2. For example, if wlan0 is on channel 5:
+
+    channel=5
+
+Save and exit nano:  press Ctrl+O, then Enter, then Ctrl+X.
+
+
+STEP 5 - Restart the access point
+---------------------------------
+
+Type:
+
+    sudo systemctl restart hostapd
+
+The front panel will lose connection for a few seconds and then
+reconnect automatically.
+
+
+STEP 6 - Verify
+---------------
+
+Type these two commands and confirm the channel numbers now match:
+
+    iw dev wlan0 info
+    iw dev uap0 info
+
+The front panel should now stream cleanly with no more stalls.
+
+
+NOTES
+-----
+
+- Some home routers automatically change their WiFi channel from time
+  to time. If your front panel was working fine and then started
+  stalling again later, your home router probably changed channels.
+  Repeat steps 2-5 to realign.
+
+- If you don't use wlan0 (no internet on the zBitx), the channel
+  conflict can't happen. You can also intentionally disable wlan0 to
+  avoid this issue entirely, but you'll lose internet access on the
+  zBitx.
+
+- For best stability, configure your home WiFi router to use a fixed
+  2.4 GHz channel (1, 6, or 11 are the standard non-overlapping ones)
+  rather than "auto", and set the zBitx's hostapd channel to match.
