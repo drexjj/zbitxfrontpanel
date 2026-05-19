@@ -1,4 +1,4 @@
-# Current version is 1.08
+# Current version is 1.10
 
 ## Build out your environment below on Pi or Linux
 
