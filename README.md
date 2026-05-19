@@ -38,7 +38,7 @@ git clone https://github.com/drexjj/zbitxfrontpanel
 
 ```console
 arduino-cli compile \
-  --fqbn rp2040:rp2040:rpipicow \
+  --fqbn rp2040:rp2040:rpipico \
   --output-dir ./build \
   .
 ```
