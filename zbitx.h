@@ -36,7 +36,7 @@ extern int8_t edit_mode;
 
 //duration since the start of the controller in millis
 extern unsigned long now;
-extern int vfwd, vswr, vref, vbatt;
+extern volatile int vfwd, vswr, vref, vbatt;
 
 extern uint16_t font_width2[];
 extern uint16_t font_width4[];

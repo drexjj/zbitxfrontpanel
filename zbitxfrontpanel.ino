@@ -30,7 +30,7 @@ unsigned long next_repeat_time = 0;
 unsigned int last_wheel_moved = 0;
 unsigned int wheel_count = 0;
 
-int vfwd=0, vswr=0, vref = 0, vbatt=0;
+volatile int vfwd=0, vswr=0, vref = 0, vbatt=0;
 int wheel_move = 0;
 
 char message_buffer[100];
@@ -229,9 +229,16 @@ void on_request(){
     }
 	}
 
-	char buff[50];
-	sprintf(buff, "vbatt %d\npower %d\nvswr %d\n", vbatt, vfwd, vswr);
-  wire_text(buff);
+	/* Send the latest telemetry from measure_voltages().
+	 * We use the globals here — NOT fresh analogRead() calls.
+	 * on_request() runs in I2C ISR context; calling analogRead() from an ISR
+	 * is unsafe on the RP2040 (ADC is shared with the main loop and returns 0
+	 * or garbage when interrupted mid-conversion).
+	 * The globals are declared volatile so the compiler cannot cache them in a
+	 * register — the ISR always reads the value measure_voltages() last wrote. */
+	char buff[60];
+	sprintf(buff, "vbatt %d\npower %d\nvswr %d\n", (int)vbatt, (int)vfwd, (int)vswr);
+	wire_text(buff);
 }
 
 int dcount = 0;
@@ -271,7 +278,13 @@ void measure_voltages(){
 	else
   	vref = ((vref * AVG_N) + r)/(AVG_N + 1);
 
-	vswr = (10*(vfwd + vref))/(vfwd-vref);
+	/* Guard against division by zero when vfwd == vref (no RF present).
+	 * On ARM Cortex-M0+ integer div-by-zero silently returns 0, which is why
+	 * vswr was always 0 instead of an open-circuit reading. */
+	if (vfwd > vref && vfwd > 0)
+		vswr = (10*(vfwd + vref))/(vfwd-vref);
+	else
+		vswr = 100;   /* no RF / open circuit — 10.0 : 1 sentinel */
 
 	// update only once in a while
 	next_update = now + 50;
@@ -372,7 +385,7 @@ void setup() {
 	attachInterrupt(ENC_A, on_enc, CHANGE);
 	attachInterrupt(ENC_B, on_enc, CHANGE);
 
-	field_set("9", "zBitx firmware v1.08\nWaiting for the zBitx to start...\n", false);
+	field_set("9", "zBitx firmware v1.10jj\nWaiting for the zBitx to start...\n", false);
 
 	if (digitalRead(ENC_S) == LOW)
 		reset_usb_boot(0,0); //invokes reset into bootloader mode

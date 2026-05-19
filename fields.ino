@@ -7,7 +7,7 @@
 #include "console.h"
 
 struct field *f_selected = NULL;
-extern int vswr, vfwd, vref, vbatt;
+extern volatile int vswr, vfwd, vref, vbatt;
 
 
 //void field_draw(struct field *f, bool all);
@@ -522,7 +522,8 @@ void smeter_draw(struct field *f){
 	}
 	int in_tx = atoi(f_tx->value);
 	 if (in_tx){
-		sprintf(temp_str, "%d W            SWR %d.%d", vfwd/10, vswr/10, vswr%10); 
+		int display_vswr = (vswr > 0) ? vswr : 100;
+		sprintf(temp_str, "%d W            SWR %d.%d", vfwd/10, display_vswr/10, display_vswr%10); 
 		screen_draw_text(temp_str, -1, f->x + 3, f->y + 1, TFT_WHITE, 2);
 		screen_draw_rect(f->x + 33,  f->y + 2, 60, 12, TFT_YELLOW);
 		screen_fill_rect(f->x + 34,  f->y + 3, vfwd, 10, TFT_RED);
