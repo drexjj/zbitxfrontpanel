@@ -276,7 +276,7 @@ struct field *field_select(const char *label){
 		return NULL;
 
 	if (!strcmp(f->label, "MENU")){
-		struct field *choice = dialog_box("Radio", "10M/12M/15M/17M/20M/30M/40M/60M/80M/AGC/VFO/SPLIT/RIT/SHUTDOWN/CLOSE");
+		struct field *choice = dialog_box("Radio", "10M/12M/15M/17M/20M/30M/40M/60M/80M/AGC/VFO/SPLIT/RIT/SET/SHUTDOWN/CLOSE");
 		if (choice && !strcmp(choice->label, "SHUTDOWN")){
 			// Ask the user to confirm before powering off.
 			struct field *confirm = dialog_box("Shutdown zBitx OS?", "OK/CANCEL");
@@ -286,6 +286,11 @@ struct field *field_select(const char *label){
 				// something like: system("sudo poweroff");
 				strcpy(message_buffer, "SHUTDOWN\n");
 			}
+		}
+		// SET now lives inside the Radio menu rather than on the main panel.
+		// Selecting it opens the Settings dialog (same list as before).
+		else if (choice && !strcmp(choice->label, "SET")){
+			dialog_box("Settings", "MY CALL/MYCALLSIGN/MY GRID/MYGRID/PASS KEY/PASSKEY/CW_INPUT/CW_DELAY/SIDETONE/CLOSE");
 		}
 		return NULL;
 	}

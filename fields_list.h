@@ -22,7 +22,9 @@ struct field main_list[] = {
   {FIELD_SELECTION, 288, 48, 48, 48,  TFT_BLACK, "SPAN", "25K", "25K/10K/6K/2.5K"},
   {FIELD_NUMBER, 336, 48, 48, 48,  TFT_BLACK, "BW", "2200", "50/5000/50"},
   {FIELD_SELECTION, 384, 48, 48, 48,  TFT_BLACK, "STEP", "1K", "10K/1K/500H/100H/10H"},
-  {FIELD_BUTTON, 432, 48, 48, 48,  TFT_BLUE, "SET", ""},
+  // SET moved into the MENU dialog (see the MENU handler). Its field
+  // definition now lives with the bandswitch/AGC/VFO group below, outside the
+  // always-on region, so it only appears as a button inside the Radio menu.
  
    //LOGGER FIELDS
   {FIELD_BUTTON, 0, 48, 48, 48,  TFT_DARKGREEN, "OPEN"},
@@ -171,6 +173,8 @@ struct field main_list[] = {
   {FIELD_SELECTION, 120, 96, 48, 48,  TFT_BLACK, "SPLIT", "OFF", "ON/OFF"},
   // RIT moved off the main panel into the MENU dialog, next to SPLIT.
   {FIELD_SELECTION, 168, 96, 48, 48,  TFT_BLACK, "RIT", "OFF", "ON/OFF"},
+  // SET moved off the main panel into the MENU dialog, next to RIT.
+  {FIELD_BUTTON, 216, 96, 48, 48,  TFT_BLUE, "SET", ""},
   /* Shutdown button — only shown inside the MENU dialog, lower-right corner */
   {FIELD_BUTTON, 360, 248, 96, 48,  TFT_RED, "SHUTDOWN", ""},
 	/* settings */
