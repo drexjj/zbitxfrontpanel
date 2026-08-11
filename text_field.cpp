@@ -151,7 +151,9 @@ void keyboard_show(uint8_t mode){
   edit_mode = mode;
 	struct field *f;
 
-  screen_fill_rect(0, 128, 480, 192, TFT_BLACK);
+  // Keyboard keys span y=120..320 (5 rows x 40px). Clear exactly that region
+  // so no sliver of the previous panel shows above the number row.
+  screen_fill_rect(0, 120, 480, 200, TFT_BLACK);
 
   for (f = field_list; f->type != -1; f++)
 		if (f->type == FIELD_KEY)

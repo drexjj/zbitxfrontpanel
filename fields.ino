@@ -230,12 +230,27 @@ void field_show(const char *label, bool turn_on){
   f->redraw = true;
 }
 
+// Extra pixels added around each visible field's rectangle when hit-testing.
+// Resistive panels + finger presses land imprecisely, so we grow the touch
+// target a few pixels beyond the drawn box. This does NOT change how fields
+// are drawn, only how forgiving they are to tap. Keep small so adjacent
+// keys don't overlap (keys are 48px wide, so 4px of slop is safe).
+#define TOUCH_SLOP 4
+
 struct field *field_at(uint16_t x, uint16_t y){
-  for (struct field *f = field_list; f->type != -1; f++)
-      if (f->x < x && x  < f->x-2 + f->w && f->y < y && y < f->y + f->h -2 && f->is_visible){
-        return f; 
-      }
-  return NULL;    
+  for (struct field *f = field_list; f->type != -1; f++){
+    if (!f->is_visible)
+      continue;
+    // inclusive, full-rectangle test grown by TOUCH_SLOP on every side,
+    // clamped so we never test past the left/top screen edge
+    int left   = (int)f->x - TOUCH_SLOP; if (left < 0) left = 0;
+    int top    = (int)f->y - TOUCH_SLOP; if (top  < 0) top  = 0;
+    int right  = (int)f->x + f->w + TOUCH_SLOP;
+    int bottom = (int)f->y + f->h + TOUCH_SLOP;
+    if ((int)x >= left && (int)x <= right && (int)y >= top && (int)y <= bottom)
+      return f;
+  }
+  return NULL;
 }
 
 //this is the user selecting a field (or a simulated touch on the field)
@@ -276,7 +291,7 @@ struct field *field_select(const char *label){
 	}
 
 	if (!strcmp(f->label, "SET")){
-		dialog_box("Settings", "MY CALL/MYCALLSIGN/MY GRID/MYGRID/PASS KEY/PASSKEY/CW_INPUT/CW_DELAY/SIDETONE/CLOSE");
+		dialog_box("Settings", "MY CALL/MYCALLSIGN/MY GRID/MYGRID/PASS KEY/PASSKEY/CW_INPUT/CW_DELAY/SIDETONE/DRIVE LBL/DRIVE/IF LBL/IF/CLOSE");
 		return NULL;
 	}
 
@@ -594,8 +609,14 @@ void field_draw(struct field *f){
 		f->type != FIELD_CONSOLE){
     //skip the background fill for the console on each character update
     screen_fill_round_rect(f->x+2, f->y+2, f->w-4, f->h-4, f->color_scheme);
+    // Give every touchable control a visible edge against the dark slate
+    // background so the user can see where each tap target begins and ends.
+    // The selected field gets a bright white outline; everything else gets
+    // a subtle grey one. SMETER is a thin readout, not a button, so skip it.
     if (f == f_selected /*|| f->type == FIELD_KEY*/)
       screen_draw_round_rect(f->x+2, f->y+2, f->w-4, f->h-4, TFT_WHITE);
+    else if (f->type != FIELD_SMETER)
+      screen_draw_round_rect(f->x+2, f->y+2, f->w-4, f->h-4, TFT_DARKGREY);
   }
   switch(f->type){
     case FIELD_WATERFALL:
