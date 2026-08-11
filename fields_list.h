@@ -185,9 +185,14 @@ struct field main_list[] = {
   {FIELD_TEXT, 144, 62, 96, 24, TFT_BLACK, "MYGRID", "", "0/10"},
   {FIELD_STATIC, 266, 48, 96, 0, TFT_BLACK, "PASS KEY", "PASS KEY:", "0/10"},
   {FIELD_TEXT, 264, 62, 96, 24, TFT_BLACK, "PASSKEY", "", "0/10"},
-  {FIELD_SELECTION, 24,112, 96, 48, TFT_BLACK, "CW_INPUT", "", "IAMBIC/IAMBICB/STRAIGHT"},
-  {FIELD_NUMBER, 144, 112, 96, 48, TFT_BLACK, "CW_DELAY", "300", "50/1000/50"},
-  {FIELD_NUMBER, 264, 112, 96, 48,  TFT_BLACK, "SIDETONE", "80", "0/100/5"},
+  // CW keyer input, CW delay, and sidetone level. Moved from the Settings
+  // dialog into the Radio menu (see the MENU handler). Placed on the y=144
+  // row, below the AGC/VFO/SPLIT/RIT/SET row, so nothing overlaps. These
+  // fields draw their own labels (INPUT / DELAY / SIDETONE), so no separate
+  // static labels are needed.
+  {FIELD_SELECTION, 24, 144, 96, 48, TFT_BLACK, "CW_INPUT", "", "IAMBIC/IAMBICB/STRAIGHT"},
+  {FIELD_NUMBER, 144, 144, 96, 48, TFT_BLACK, "CW_DELAY", "300", "50/1000/50"},
+  {FIELD_NUMBER, 264, 144, 96, 48,  TFT_BLACK, "SIDETONE", "80", "0/100/5"},
 	
   {-1}
 };
