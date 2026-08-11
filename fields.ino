@@ -536,7 +536,9 @@ void smeter_draw(struct field *f){
 
 	int v = vbatt/10;
 	sprintf(temp_str, "+%d.%dv", v/10, v%10);
-	screen_draw_text(temp_str, -1, f->x + 155, f->y+1, TFT_WHITE, 1);
+	// Placed at +130 (was +155): with the meter moved to the right edge the
+	// old offset ran the voltage text a few px off-screen. +130 keeps it inside.
+	screen_draw_text(temp_str, -1, f->x + 130, f->y+1, TFT_WHITE, 1);
 
 	struct field *f_tx = field_get("IN_TX");
 	if (!f_tx){
