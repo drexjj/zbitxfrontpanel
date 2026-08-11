@@ -9,6 +9,12 @@
 struct field *f_selected = NULL;
 extern volatile int vswr, vfwd, vref, vbatt;
 
+// True while a modal dialog (Radio menu, Settings, Shutdown confirm, Logbook)
+// is on screen. Used to suppress the top-right battery/S-meter readout, which
+// otherwise paints over the dialog because smeter_draw() runs on every
+// field_draw_all() regardless of which screen is showing.
+static bool in_dialog = false;
+
 
 //void field_draw(struct field *f, bool all);
 
@@ -97,6 +103,7 @@ struct field *dialog_box(const char *title, char const *fields_list){
 	struct field *f_touched = NULL;
 	f_selected = NULL;
 
+	in_dialog = true;   // suppress the battery/S-meter overlay while modal
 	while(1){	
 		f_touched = ui_slice();
 		if (f_touched && f_touched->type == FIELD_BUTTON){
@@ -104,6 +111,7 @@ struct field *dialog_box(const char *title, char const *fields_list){
 		}
 		delay(10);
 	}
+	in_dialog = false;  // back to a normal panel; meter may draw again
   screen_fill_rect(0,0,SCREEN_WIDTH, SCREEN_HEIGHT,SCREEN_BACKGROUND_COLOR);
 	field_set_panel(original_mode);
 	field_draw_all(1);
@@ -819,6 +827,11 @@ void field_draw_all(bool all){
       	f->redraw = false;
 			}
     }
-	f = field_get("METERS");
-	smeter_draw(f);
+	// Only paint the top-right battery / S-meter readout on a normal operating
+	// panel. Inside a dialog (menu, settings, etc.) it would overwrite the
+	// dialog's own content, so skip it.
+	if (!in_dialog){
+		f = field_get("METERS");
+		smeter_draw(f);
+	}
 }
