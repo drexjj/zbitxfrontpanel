@@ -1,17 +1,21 @@
 #ifndef FIELDS_LIST_H
-#define FIELDS_H
+#define FIELDS_LIST_H
 
 #define FIELDS_ALWAYS_ON 20 
 
 struct field main_list[] = {
 
-  //the first eight fiels are always visible
-  {FIELD_BUTTON, 0, 0, 48, 48,  TFT_ORANGE, "MENU", "" },  
-  {FIELD_SELECTION, 48, 0, 48, 48,  TFT_BLACK, "MODE", "USB", "USB/LSB/CW/CWR/FT8/AM/DIGI/2TONE"},
-  {FIELD_NUMBER, 96, 0, 48, 48,  TFT_BLACK, "DRIVE", "100", "0/100/5"},   
-  {FIELD_NUMBER, 144, 0, 48, 48,  TFT_BLACK, "IF", "40", "0/100/1"},
-  {FIELD_SELECTION, 192, 0, 48, 48,  TFT_BLACK, "RIT", "OFF", "ON/OFF"},
-  {FIELD_FREQ, 240, 0, 192, 48,  TFT_BLACK, "FREQ", "14074000", "500000/30000000/1"}, 
+  //the first eight fiels are always visible.
+  // Top status row reflowed for touch: MENU + MODE + RIT are the controls a
+  // user reaches for constantly, so each now spans a full 72px cell instead
+  // of a cramped 48px one. DRIVE and IF are "set once and forget" controls,
+  // so they've moved into the Settings dialog (see the SET dialog_box list)
+  // rather than eating prime top-row real estate. FREQ keeps its 192px width
+  // and its x=240 anchor (freq_draw / the METERS overlay depend on it).
+  {FIELD_BUTTON, 0, 0, 72, 48,  TFT_ORANGE, "MENU", "" },
+  {FIELD_SELECTION, 72, 0, 84, 48,  TFT_BLACK, "MODE", "USB", "USB/LSB/CW/CWR/FT8/AM/DIGI/2TONE"},
+  {FIELD_SELECTION, 156, 0, 84, 48,  TFT_BLACK, "RIT", "OFF", "ON/OFF"},
+  {FIELD_FREQ, 240, 0, 192, 48,  TFT_BLACK, "FREQ", "14074000", "500000/30000000/1"},
   {FIELD_NUMBER, 432, 0, 48, 48,  TFT_BLACK, "AUDIO", "95", "0/100/1"},
 
   {FIELD_SELECTION, 288, 48, 48, 48,  TFT_BLACK, "SPAN", "25K", "25K/10K/6K/2.5K"},
@@ -72,7 +76,7 @@ struct field main_list[] = {
   {FIELD_KEY, 120, 240, 48, 40,  TFT_BLACK, "X", "_"},
   {FIELD_KEY, 168, 240, 48, 40,  TFT_BLACK, "C", "'"},
   {FIELD_KEY, 216, 240, 48, 40,  TFT_BLACK, "V", ":"},
-  {FIELD_KEY, 264, 240, 48, 40,  TFT_BLACK, "B", "'"},
+  {FIELD_KEY, 264, 240, 48, 40,  TFT_BLACK, "B", "\""},
   {FIELD_KEY, 312, 240, 48, 40,  TFT_BLACK, "N", "!"},
   {FIELD_KEY, 360, 240, 48, 40,  TFT_BLACK, "M", ";"},
   {FIELD_KEY, 408, 240, 72, 40,  TFT_BLACK, "del", "del"},
@@ -111,9 +115,13 @@ struct field main_list[] = {
   {FIELD_NUMBER, 432, 272, 48, 48, TFT_BLACK, "PITCH", "600", "100/3000/10"},   
 
   //SSB/AM other voice modes
-  {FIELD_NUMBER, 0, 272, 48, 48, TFT_BLACK, "MIC", "12", "0/100/5"},
-  {FIELD_BUTTON, 48, 272, 96, 48, TFT_RED, "TX", ""},   
-  {FIELD_BUTTON, 144, 272, 96, 48, TFT_BLUE, "RX", ""},
+  // The voice-mode bottom row only shows MIC/TX/RX, which left ~240px empty.
+  // TX and RX are the most-pressed, most time-critical buttons on the radio,
+  // so they now fill the whole row: MIC keeps a 72px cell, TX and RX get
+  // 204px each. Big, unmissable PTT targets.
+  {FIELD_NUMBER, 0, 272, 72, 48, TFT_BLACK, "MIC", "12", "0/100/5"},
+  {FIELD_BUTTON, 72, 272, 204, 48, TFT_RED, "TX", ""},
+  {FIELD_BUTTON, 276, 272, 204, 48, TFT_BLUE, "RX", ""},
 
   //logbook
   {FIELD_LOGBOOK, 0, 48, 480, 224, TFT_BLACK, "LOGB", "", "", logbook_draw},
@@ -171,6 +179,14 @@ struct field main_list[] = {
   {FIELD_TEXT, 144, 62, 96, 24, TFT_BLACK, "MYGRID", "", "0/10"},
   {FIELD_STATIC, 266, 48, 96, 0, TFT_BLACK, "PASS KEY", "PASS KEY:", "0/10"},
   {FIELD_TEXT, 264, 62, 96, 24, TFT_BLACK, "PASSKEY", "", "0/10"},
+  /* DRIVE and IF moved off the top row into Settings. Shown only when the
+     SET dialog is open (see the SET handler's dialog_box list). Third row
+     of the Settings panel, below CW_INPUT/CW_DELAY/SIDETONE. */
+  {FIELD_STATIC, 26, 162, 96, 0, TFT_BLACK, "DRIVE LBL", "DRIVE:", "0/10"},
+  {FIELD_NUMBER, 24, 176, 96, 48,  TFT_BLACK, "DRIVE", "100", "0/100/5"},
+  {FIELD_STATIC, 146, 162, 96, 0, TFT_BLACK, "IF LBL", "IF GAIN:", "0/10"},
+  {FIELD_NUMBER, 144, 176, 96, 48,  TFT_BLACK, "IF", "40", "0/100/1"},
+
   {FIELD_SELECTION, 24,112, 96, 48, TFT_BLACK, "CW_INPUT", "", "IAMBIC/IAMBICB/STRAIGHT"},
   {FIELD_NUMBER, 144, 112, 96, 48, TFT_BLACK, "CW_DELAY", "300", "50/1000/50"},
   {FIELD_NUMBER, 264, 112, 96, 48,  TFT_BLACK, "SIDETONE", "80", "0/100/5"},

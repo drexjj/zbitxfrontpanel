@@ -171,7 +171,37 @@ void screen_pixel(int x, int y, uint16_t color){
   tft.drawPixel(x,y,color);
 }
 
+// Debounced touch read for resistive panels.
+//
+// A raw getTouch() on a resistive screen chatters: it returns scattered
+// phantom points as the panel settles and as finger pressure varies. That
+// causes double-fires and "wrong key" hits. We require several samples that
+// agree to within TOUCH_JITTER pixels before reporting a touch, and return
+// the average of the accepted samples for a steadier coordinate.
+#define TOUCH_SAMPLES 4      // samples that must agree
+#define TOUCH_JITTER  8      // max px spread between samples to accept
+
 bool screen_read(uint16_t *x, uint16_t *y){
-  return tft.getTouch(x, y);  
+  uint16_t sx, sy;
+  uint32_t sum_x = 0, sum_y = 0;
+  uint16_t min_x = 0xFFFF, min_y = 0xFFFF, max_x = 0, max_y = 0;
+
+  for (int i = 0; i < TOUCH_SAMPLES; i++){
+    if (!tft.getTouch(&sx, &sy))
+      return false;               // any sample without contact -> not a touch
+    sum_x += sx; sum_y += sy;
+    if (sx < min_x) min_x = sx;
+    if (sx > max_x) max_x = sx;
+    if (sy < min_y) min_y = sy;
+    if (sy > max_y) max_y = sy;
+  }
+
+  // reject if the samples are too scattered (chatter / drag noise)
+  if ((max_x - min_x) > TOUCH_JITTER || (max_y - min_y) > TOUCH_JITTER)
+    return false;
+
+  *x = (uint16_t)(sum_x / TOUCH_SAMPLES);
+  *y = (uint16_t)(sum_y / TOUCH_SAMPLES);
+  return true;
 }
 
