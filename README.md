@@ -55,7 +55,11 @@ You may get a compiler error in some Linux systems depending on your configurati
 
 The typical library location is in ~/Arduino/libraries/TFT_eSPI/User_Setup.h  
 
-You can try copying over the tft setup file to the arduino folder with ```console cp ~/zbitxfrontpanel/TFT_setup.h ~/Arduino/libraries/TFT_eSPI/User_Setup.h ```
+You can try copying over the tft setup file to the arduino folder with
+
+```console
+cp ~/zbitxfrontpanel/TFT_setup.h ~/Arduino/libraries/TFT_eSPI/User_Setup.h
+```
 
 Please keep in mind that overwriting this file will change all of the globals for other projects, so please use with caution.
 
