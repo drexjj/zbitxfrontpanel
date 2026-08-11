@@ -295,11 +295,6 @@ struct field *field_select(const char *label){
 		return NULL;
 	}
 
-	if (!strcmp(f->label, "SET")){
-		dialog_box("Settings", "MY CALL/MYCALLSIGN/MY GRID/MYGRID/PASS KEY/PASSKEY/CW_INPUT/CW_DELAY/SIDETONE/CLOSE");
-		return NULL;
-	}
-
 	if (!strcmp(f->label, "[x]")){
 		keyboard_hide();
 	}
