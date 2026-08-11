@@ -16,8 +16,12 @@ struct field main_list[] = {
   {FIELD_SELECTION, 48, 0, 64, 48,  TFT_BLACK, "MODE", "USB", "USB/LSB/CW/CWR/FT8/AM/DIGI/2TONE"},
   {FIELD_NUMBER, 112, 0, 64, 48,  TFT_BLACK, "DRIVE", "100", "0/100/5"},
   {FIELD_NUMBER, 176, 0, 64, 48,  TFT_BLACK, "IF", "40", "0/100/1"},
-  {FIELD_FREQ, 240, 0, 192, 48,  TFT_BLACK, "FREQ", "14074000", "500000/30000000/1"},
-  {FIELD_NUMBER, 432, 0, 48, 48,  TFT_BLACK, "AUDIO", "95", "0/100/1"},
+  // FREQ + its S-meter/voltage overlay now sit flush against the right edge
+  // (x=288..480). AUDIO takes the slot to their left at x=240. freq_draw()
+  // positions all its text relative to the FREQ field's own x, so it follows
+  // automatically; the METERS overlay is moved to match (see below).
+  {FIELD_NUMBER, 240, 0, 48, 48,  TFT_BLACK, "AUDIO", "95", "0/100/1"},
+  {FIELD_FREQ, 288, 0, 192, 48,  TFT_BLACK, "FREQ", "14074000", "500000/30000000/1"},
 
   {FIELD_SELECTION, 288, 48, 48, 48,  TFT_BLACK, "SPAN", "25K", "25K/10K/6K/2.5K"},
   {FIELD_NUMBER, 336, 48, 48, 48,  TFT_BLACK, "BW", "2200", "50/5000/50"},
@@ -36,8 +40,9 @@ struct field main_list[] = {
   {FIELD_TEXT, 144, 72, 48, 24, TFT_BLACK, "SENT", "", "0,10"},
   {FIELD_TEXT, 192, 72, 48, 24, TFT_BLACK, "NR", "", "0,10"},
 
-	//METERS is not SMETERS to prevent spiralling of request/responses
-  {FIELD_SMETER, 243, 3, 180, 15, TFT_BLACK, "METERS", "0", "0/10000/1"},
+	//METERS is not SMETERS to prevent spiralling of request/responses.
+	// Kept 3px inside FREQ's left edge; moved with FREQ to x=291 (FREQ x=288).
+  {FIELD_SMETER, 291, 3, 180, 15, TFT_BLACK, "METERS", "0", "0/10000/1"},
   //keyboard fields, keeping them just under the permanent fields
   //ensures that they get detected first  
 
