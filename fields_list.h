@@ -5,21 +5,21 @@
 
 struct field main_list[] = {
 
-  //the first eight fiels are always visible.
-  // Top status row reflowed for touch: MENU + MODE + RIT are the controls a
-  // user reaches for constantly, so each now spans a full 72px cell instead
-  // of a cramped 48px one. DRIVE and IF are "set once and forget" controls,
-  // so they've moved into the Settings dialog (see the SET dialog_box list)
-  // rather than eating prime top-row real estate. FREQ keeps its 192px width
-  // and its x=240 anchor (freq_draw / the METERS overlay depend on it).
-  {FIELD_BUTTON, 0, 0, 72, 48,  TFT_ORANGE, "MENU", "" },
-  {FIELD_SELECTION, 72, 0, 84, 48,  TFT_BLACK, "MODE", "USB", "USB/LSB/CW/CWR/FT8/AM/DIGI/2TONE"},
-  {FIELD_SELECTION, 156, 0, 84, 48,  TFT_BLACK, "RIT", "OFF", "ON/OFF"},
+  //the first fields are always visible.
+  // Top status row: MENU + MODE + DRIVE + IF fill the left half, FREQ + AUDIO
+  // the right. DRIVE and IF are frequently adjusted during operation, so they
+  // live here at 64px each (up from the original cramped 48px). RIT is not on
+  // the panel — it's reached through the MENU dialog (see the MENU handler),
+  // since it's toggled far less often than drive/IF. FREQ keeps its 192px
+  // width and x=240 anchor (freq_draw / the METERS overlay depend on it).
+  {FIELD_BUTTON, 0, 0, 48, 48,  TFT_ORANGE, "MENU", "" },
+  {FIELD_SELECTION, 48, 0, 64, 48,  TFT_BLACK, "MODE", "USB", "USB/LSB/CW/CWR/FT8/AM/DIGI/2TONE"},
+  {FIELD_NUMBER, 112, 0, 64, 48,  TFT_BLACK, "DRIVE", "100", "0/100/5"},
+  {FIELD_NUMBER, 176, 0, 64, 48,  TFT_BLACK, "IF", "40", "0/100/1"},
   {FIELD_FREQ, 240, 0, 192, 48,  TFT_BLACK, "FREQ", "14074000", "500000/30000000/1"},
   {FIELD_NUMBER, 432, 0, 48, 48,  TFT_BLACK, "AUDIO", "95", "0/100/1"},
 
   {FIELD_SELECTION, 288, 48, 48, 48,  TFT_BLACK, "SPAN", "25K", "25K/10K/6K/2.5K"},
-  //{FIELD_SELECTION, 336, 48, 48, 48,  TFT_BLACK, "RIT", "OFF", "ON/OFF"},  
   {FIELD_NUMBER, 336, 48, 48, 48,  TFT_BLACK, "BW", "2200", "50/5000/50"},
   {FIELD_SELECTION, 384, 48, 48, 48,  TFT_BLACK, "STEP", "1K", "10K/1K/500H/100H/10H"},
   {FIELD_BUTTON, 432, 48, 48, 48,  TFT_BLUE, "SET", ""},
@@ -169,6 +169,8 @@ struct field main_list[] = {
   {FIELD_SELECTION, 24, 96, 48, 48,  TFT_BLACK, "AGC", "MED", "OFF/SLOW/MED/FAST"},
   {FIELD_SELECTION, 72, 96, 48, 48,  TFT_BLACK, "VFO", "A", "A/B"},
   {FIELD_SELECTION, 120, 96, 48, 48,  TFT_BLACK, "SPLIT", "OFF", "ON/OFF"},
+  // RIT moved off the main panel into the MENU dialog, next to SPLIT.
+  {FIELD_SELECTION, 168, 96, 48, 48,  TFT_BLACK, "RIT", "OFF", "ON/OFF"},
   /* Shutdown button — only shown inside the MENU dialog, lower-right corner */
   {FIELD_BUTTON, 360, 248, 96, 48,  TFT_RED, "SHUTDOWN", ""},
 	/* settings */
@@ -179,14 +181,6 @@ struct field main_list[] = {
   {FIELD_TEXT, 144, 62, 96, 24, TFT_BLACK, "MYGRID", "", "0/10"},
   {FIELD_STATIC, 266, 48, 96, 0, TFT_BLACK, "PASS KEY", "PASS KEY:", "0/10"},
   {FIELD_TEXT, 264, 62, 96, 24, TFT_BLACK, "PASSKEY", "", "0/10"},
-  /* DRIVE and IF moved off the top row into Settings. Shown only when the
-     SET dialog is open (see the SET handler's dialog_box list). Third row
-     of the Settings panel, below CW_INPUT/CW_DELAY/SIDETONE. */
-  {FIELD_STATIC, 26, 162, 96, 0, TFT_BLACK, "DRIVE LBL", "DRIVE:", "0/10"},
-  {FIELD_NUMBER, 24, 176, 96, 48,  TFT_BLACK, "DRIVE", "100", "0/100/5"},
-  {FIELD_STATIC, 146, 162, 96, 0, TFT_BLACK, "IF LBL", "IF GAIN:", "0/10"},
-  {FIELD_NUMBER, 144, 176, 96, 48,  TFT_BLACK, "IF", "40", "0/100/1"},
-
   {FIELD_SELECTION, 24,112, 96, 48, TFT_BLACK, "CW_INPUT", "", "IAMBIC/IAMBICB/STRAIGHT"},
   {FIELD_NUMBER, 144, 112, 96, 48, TFT_BLACK, "CW_DELAY", "300", "50/1000/50"},
   {FIELD_NUMBER, 264, 112, 96, 48,  TFT_BLACK, "SIDETONE", "80", "0/100/5"},
