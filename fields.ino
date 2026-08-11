@@ -114,6 +114,19 @@ struct field *dialog_box(const char *title, char const *fields_list){
 	in_dialog = false;  // back to a normal panel; meter may draw again
   screen_fill_rect(0,0,SCREEN_WIDTH, SCREEN_HEIGHT,SCREEN_BACKGROUND_COLOR);
 	field_set_panel(original_mode);
+
+	// After a dialog closes we do a full-screen wipe above, so the waterfall
+	// region is now background-coloured. field_draw_all() only draws fields
+	// taller than the keyboard area when edit_mode == -1, so if a keyboard/
+	// text edit left edit_mode set, the WF field (y=96,h=176) gets skipped and
+	// the waterfall stays black until the next redraw. Force edit_mode clear
+	// and flag the waterfall for redraw so it repaints its buffered image now.
+	edit_mode = -1;
+	struct field *f_wf_restore = field_get("WF");
+	if (f_wf_restore){
+		f_wf_restore->is_visible = true;
+		f_wf_restore->redraw = true;
+	}
 	field_draw_all(1);
 	f_selected = f_original_selection;
 	return f_touched;
@@ -296,9 +309,12 @@ struct field *field_select(const char *label){
 			}
 		}
 		// SET now lives inside the Radio menu rather than on the main panel.
-		// Selecting it opens the Settings dialog (same list as before).
+		// Selecting it opens the Settings dialog (same list as before). When
+		// that dialog closes, tell the GTK app to dismiss its matching
+		// Settings dialog too (it opened one when we sent "SET" on entry).
 		else if (choice && !strcmp(choice->label, "SET")){
 			dialog_box("Settings", "MY CALL/MYCALLSIGN/MY GRID/MYGRID/PASS KEY/PASSKEY/CLOSE");
+			strcpy(message_buffer, "SETCLOSE\n");
 		}
 		return NULL;
 	}
