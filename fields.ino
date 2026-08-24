@@ -309,12 +309,9 @@ struct field *field_select(const char *label){
 			}
 		}
 		// SET now lives inside the Radio menu rather than on the main panel.
-		// Selecting it opens the Settings dialog (same list as before). When
-		// that dialog closes, tell the GTK app to dismiss its matching
-		// Settings dialog too (it opened one when we sent "SET" on entry).
+		// Selecting it opens the Settings dialog (same list as before).
 		else if (choice && !strcmp(choice->label, "SET")){
 			dialog_box("Settings", "MY CALL/MYCALLSIGN/MY GRID/MYGRID/PASS KEY/PASSKEY/CLOSE");
-			strcpy(message_buffer, "SETCLOSE\n");
 		}
 		return NULL;
 	}
