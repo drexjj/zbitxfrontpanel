@@ -66,6 +66,28 @@ uint16_t inline heat_map(uint16_t v){
 	return r + g + b;
 }
 
+// How many extra rows to pad above/below each column's segment so flat
+// stretches of the trace don't collapse to a single pixel. 0 = old behaviour.
+#define TRACE_THICKNESS 1
+
+// How much brightness the spectrum overlay keeps from one update to the
+// next (numerator/denominator, e.g. 3/4 = keeps 75%, ~4-5 frames to black).
+// Set NUM == DEN to disable persistence and go back to a hard clear.
+#define TRACE_PERSIST_NUM 3
+#define TRACE_PERSIST_DEN 4
+
+// Decay one RGB565 pixel toward black by TRACE_PERSIST_NUM/DEN.
+static inline uint16_t fade565(uint16_t c){
+	if (!c) return 0;
+	uint16_t r = (c >> 11) & 0x1F;
+	uint16_t g = (c >> 5) & 0x3F;
+	uint16_t b = c & 0x1F;
+	r = (r * TRACE_PERSIST_NUM) / TRACE_PERSIST_DEN;
+	g = (g * TRACE_PERSIST_NUM) / TRACE_PERSIST_DEN;
+	b = (b * TRACE_PERSIST_NUM) / TRACE_PERSIST_DEN;
+	return (r << 11) | (g << 5) | b;
+}
+
 // Draw a vertical line into the internal buffer (always WF_BUF_W wide).
 void waterfall_line(int x, int y1, int y2, int color){
 	if (x < 0)
@@ -89,11 +111,17 @@ void waterfall_line(int x, int y1, int y2, int color){
 // bins[] must always contain exactly WF_BUF_W (240) entries.
 void waterfall_update(struct field *f, uint8_t *bins){
 
-	// Clear the spectrum-analyser overlay rows.
-	memset(waterfall, 0, WF_BUF_W * WF_SPECTRUM_ROWS * sizeof(uint16_t));
+	// Fade the spectrum-analyser overlay rows instead of clearing them
+	// outright, so recent traces persist for a few frames and decay --
+	// gives the trace a phosphor-style afterglow instead of popping
+	// between frames with nothing left behind.
+	for (int i = 0; i < WF_BUF_W * WF_SPECTRUM_ROWS; i++)
+		waterfall[i] = fade565(waterfall[i]);
 
 	// Bandwidth / centre / TX-pitch indicator lines.
 	// All x-positions are relative to the centre of the internal buffer.
+	// These are redrawn at full brightness every frame (after the fade
+	// above), so they stay crisp and don't pick up the trace's afterglow.
 	for (int i = bandwidth_start; i < bandwidth_stop; i++)
 		waterfall_line(WF_BUF_W/2 + i, 0, 48, TFT_DARKGREY);
 	waterfall_line(WF_BUF_W/2, 0, 48, TFT_WHITE);
@@ -101,13 +129,17 @@ void waterfall_update(struct field *f, uint8_t *bins){
 	if (!strcmp(field_get("MODE")->value, "FT8"))
 		waterfall_line(WF_BUF_W/2 + tx_pitch, 0, 48, TFT_RED);
 
-	// Draw the spectrum waveform line.
+	// Draw the spectrum waveform line, padded by TRACE_THICKNESS rows
+	// above/below each column's segment so flat stretches don't collapse
+	// to a single pixel.
 	int last_y = 48 - waterfall[0];
 	for (int i = 1; i < WF_BUF_W; i++){
 		int y_now  = 48 - (bins[i]   / 2);
 		int y_last = 48 - (bins[i-1] / 2);
 		if (y_now < 0) y_now = 0;
-		waterfall_line(WF_BUF_W - i, y_last, y_now, TFT_YELLOW);
+		int ylo = (y_last < y_now ? y_last : y_now) - TRACE_THICKNESS;
+		int yhi = (y_last > y_now ? y_last : y_now) + TRACE_THICKNESS;
+		waterfall_line(WF_BUF_W - i, ylo, yhi, TFT_YELLOW);
 		last_y = y_now;
 	}
 
