@@ -29,6 +29,18 @@ void console_init(){
 //draw full the first time
 static int8_t redraw_full = 1;
 
+// Fully clear the console: empty the text buffer, move the write cursor back
+// to the top, and force the next console_draw() to repaint the whole area.
+// console_init() only zeroes the buffer; it leaves the cursor mid-buffer and
+// doesn't trigger a redraw, so use this when you want a clean, blank console
+// (e.g. when switching into a mode that shows the console box).
+void console_clear(){
+	memset(console_buffer, 0, sizeof(console_buffer));
+	current_line = 0;
+	current_column = 0;
+	redraw_full = 1;
+}
+
 void console_update(struct field *f, const char *style, const char *text){
 	struct text_line *t = console_buffer+ current_line;
 	
