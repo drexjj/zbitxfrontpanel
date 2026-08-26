@@ -12,7 +12,7 @@ struct field main_list[] = {
   // the panel — it's reached through the MENU dialog (see the MENU handler),
   // since it's toggled far less often than drive/IF. FREQ keeps its 192px
   // width and x=240 anchor (freq_draw / the METERS overlay depend on it).
-  {FIELD_BUTTON, 0, 0, 48, 48,  TFT_ORANGE, "MENU", "" },
+  {FIELD_BUTTON, 0, 0, 48, 48,  TFT_ORANGE, "MENU", "-" },
   {FIELD_SELECTION, 48, 0, 64, 48,  TFT_BLACK, "MODE", "USB", "USB/LSB/CW/CWR/FT8/AM/DIGI/2TONE"},
   {FIELD_NUMBER, 112, 0, 64, 48,  TFT_BLACK, "DRIVE", "100", "0/100/5"},
   {FIELD_NUMBER, 176, 0, 64, 48,  TFT_BLACK, "IF", "40", "0/100/1"},
@@ -26,6 +26,7 @@ struct field main_list[] = {
   {FIELD_SELECTION, 288, 48, 48, 48,  TFT_BLACK, "SPAN", "25K", "25K/10K/6K/2.5K"},
   {FIELD_NUMBER, 336, 48, 48, 48,  TFT_BLACK, "BW", "2200", "50/5000/50"},
   {FIELD_SELECTION, 384, 48, 48, 48,  TFT_BLACK, "STEP", "1K", "10K/1K/500H/100H/10H"},
+  {FIELD_SELECTION, 432, 48, 48, 48,  TFT_BLACK, "AGC", "MED", "OFF/SLOW/MED/FAST"},
   // SET moved into the MENU dialog (see the MENU handler). Its field
   // definition now lives with the bandswitch/AGC/VFO group below, outside the
   // always-on region, so it only appears as a button inside the Radio menu.
@@ -122,13 +123,15 @@ struct field main_list[] = {
   {FIELD_NUMBER, 432, 272, 48, 48, TFT_BLACK, "PITCH", "600", "100/3000/10"},   
 
   //SSB/AM other voice modes
-  // The voice-mode bottom row only shows MIC/TX/RX, which left ~240px empty.
-  // TX and RX are the most-pressed, most time-critical buttons on the radio,
-  // so they now fill the whole row: MIC keeps a 72px cell, TX and RX get
-  // 204px each. Big, unmissable PTT targets.
+  // Bottom row: MIC (72) + TX (156) + RX (156) + TUNE (96, flush right),
+  // filling the full 480px. TUNE emits a timed tuning carrier: tapping ON
+  // sends "TUNE ON" (keys TX at TNPWR power for TNDUR seconds, auto-stops);
+  // OFF sends "TUNE OFF". Orange to flag that it keys the transmitter.
+  // TNDUR/TNPWR live in the OPTIONS menu.
   {FIELD_NUMBER, 0, 272, 72, 48, TFT_BLACK, "MIC", "12", "0/100/5"},
-  {FIELD_BUTTON, 72, 272, 204, 48, TFT_RED, "TX", ""},
-  {FIELD_BUTTON, 276, 272, 204, 48, TFT_BLUE, "RX", ""},
+  {FIELD_BUTTON, 72, 272, 156, 48, TFT_RED, "TX", ""},
+  {FIELD_BUTTON, 228, 272, 156, 48, TFT_BLUE, "RX", ""},
+  {FIELD_SELECTION, 384, 272, 96, 48, TFT_ORANGE, "TUNE", "OFF", "ON/OFF"},
 
   //logbook
   {FIELD_LOGBOOK, 0, 48, 480, 224, TFT_BLACK, "LOGB", "", "", logbook_draw},
@@ -173,16 +176,49 @@ struct field main_list[] = {
   {FIELD_BUTTON, 312, 48, 48, 48,  TFT_BLACK, "40M", "1"},
   {FIELD_BUTTON, 360, 48, 48, 48,  TFT_BLACK, "60M", "1"},
   {FIELD_BUTTON, 408, 48, 48, 48,  TFT_BLACK, "80M", "1"},
-  {FIELD_SELECTION, 24, 96, 48, 48,  TFT_BLACK, "AGC", "MED", "OFF/SLOW/MED/FAST"},
-  {FIELD_SELECTION, 72, 96, 48, 48,  TFT_BLACK, "VFO", "A", "A/B"},
-  {FIELD_SELECTION, 120, 96, 48, 48,  TFT_BLACK, "SPLIT", "OFF", "ON/OFF"},
+  // AGC now lives on the main panel (top second row), so it's no longer
+  // defined here or shown in the Radio dialog. The y=96 dialog row is
+  // VFO / SPLIT / RIT / SET, tiled contiguously from the left.
+  {FIELD_SELECTION, 24, 96, 48, 48,  TFT_BLACK, "VFO", "A", "A/B"},
+  {FIELD_SELECTION, 72, 96, 48, 48,  TFT_BLACK, "SPLIT", "OFF", "ON/OFF"},
   // RIT moved off the main panel into the MENU dialog, next to SPLIT.
-  {FIELD_SELECTION, 168, 96, 48, 48,  TFT_BLACK, "RIT", "OFF", "ON/OFF"},
-  // SET moved off the main panel into the MENU dialog, next to RIT.
-  {FIELD_BUTTON, 216, 96, 48, 48,  TFT_BLUE, "SET", ""},
+  {FIELD_SELECTION, 120, 96, 48, 48,  TFT_BLACK, "RIT", "OFF", "ON/OFF"},
+  // SETUP moved to the 4th row (y=196), right of the OPTIONS button, so the
+  // y=96 row is just VFO/SPLIT/RIT. Opens the station settings menu
+  // (callsign / grid / passkey) and, in parallel, the GTK settings dialog.
+  {FIELD_BUTTON, 126, 196, 96, 48,  TFT_BLUE, "SETUP", ""},
+  // OPTIONS button opens the GTK-mirrored audio/DSP control menu. Shown only
+  // inside the Radio dialog; shares the y=196 row with SET (bands are y=48,
+  // VFO/SPLIT/RIT y=96, CW input/delay/sidetone y=144, CLOSE/SHUTDOWN y=248),
+  // so it doesn't overlap any other Radio-dialog control. Its label must stay
+  // distinct from the main-panel "MENU" button above.
+  {FIELD_BUTTON, 24, 196, 96, 48,  TFT_BLUE, "OPTIONS", ""},
   /* Shutdown button — only shown inside the MENU dialog, lower-right corner */
   {FIELD_BUTTON, 360, 248, 96, 48,  TFT_RED, "SHUTDOWN", ""},
-	/* settings */
+
+   /* ---- Menu 1 : audio / DSP signal-path controls ---- */
+  /* TXEQ and RXEQ were removed (equalizer is configured on the GTK side).
+     TUNE moved to the main Radio menu (below the 80M button). */
+  /* row 1 : toggles */
+  {FIELD_SELECTION, 8,   40, 112, 48, TFT_BLACK, "NOTCH",  "OFF", "ON/OFF"},
+  {FIELD_SELECTION, 128, 40, 112, 48, TFT_BLACK, "ANR",    "OFF", "ON/OFF"},
+  {FIELD_SELECTION, 248, 40, 112, 48, TFT_BLACK, "DSP",    "OFF", "ON/OFF"},
+  {FIELD_SELECTION, 368, 40, 112, 48, TFT_BLACK, "VFOLK",  "OFF", "ON/OFF"},
+  /* row 2 : numerics */
+  {FIELD_NUMBER,    8,   92, 112, 48, TFT_BLACK, "NFREQ",  "50",  "60/3000/10"},
+  {FIELD_NUMBER,    128, 92, 112, 48, TFT_BLACK, "BNDWTH", "10",  "60/1000/10"},
+  {FIELD_NUMBER,    248, 92, 112, 48, TFT_BLACK, "BFO",    "0",   "-3000/3000/50"},
+  {FIELD_NUMBER,    368, 92, 112, 48, TFT_BLACK, "TXMON",  "0",   "0/10/1"},
+  /* row 3 : numerics */
+  {FIELD_NUMBER,    8,   144, 112, 48, TFT_BLACK, "TNDUR", "5",   "2/30/1"},
+  {FIELD_NUMBER,    128, 144, 112, 48, TFT_BLACK, "TNPWR", "20",  "1/100/1"},
+
+  /* Menu 2 (scope / waterfall / display controls) was intentionally removed —
+     those settings don't apply to the front panel. If you ever want them back,
+     they lived in the GTK menu2_display() as WFMIN/WFMAX/WFSPD/SCOPEGAIN/
+     SCOPEAVG/SCOPESIZE/INTENSITY/AUTOSCOPE/TXPANAFAL. */
+
+  /* settings */
 
   {FIELD_STATIC, 26,48, 96, 0, TFT_BLACK, "MY CALL", "MY CALL:", "0/10"},
   {FIELD_TEXT, 24, 62, 96, 24, TFT_BLACK, "MYCALLSIGN", "", "0/10"},

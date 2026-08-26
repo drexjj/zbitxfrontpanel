@@ -152,10 +152,15 @@ void field_set_panel(const char *mode){
   else if (!strcmp(mode, "CW") || !strcmp(mode, "CWR")){
     strcpy(list, "ESC/F1/F2/F3/F4/F5/F6/F7/PITCH/WPM/TEXT/CONSOLE/WF");
     if (f_wf){ f_wf->w = 240; f_wf->redraw = true; }
+    // CW/CWR is the only panel that shows the CONSOLE box. Clear it on entry
+    // so stale text relayed from the GTK console (its "console box" default,
+    // "Invalid setting:" lines, etc.) doesn't appear when the box becomes
+    // visible. Fresh console output from this point on still shows normally.
+    console_clear();
   }
   else {
     // USB, LSB, AM, DIGI, 2TONE — full-width waterfall, no console box.
-    strcpy(list, "MIC/TX/RX/WF");
+    strcpy(list, "MIC/TX/RX/TUNE/WF");
     if (f_wf){ f_wf->w = SCREEN_WIDTH; f_wf->redraw = true; }
   }
 
@@ -297,7 +302,11 @@ struct field *field_select(const char *label){
 		return NULL;
 
 	if (!strcmp(f->label, "MENU")){
-		struct field *choice = dialog_box("Radio", "10M/12M/15M/17M/20M/30M/40M/60M/80M/AGC/VFO/SPLIT/RIT/SET/CW_INPUT/CW_DELAY/SIDETONE/SHUTDOWN/CLOSE");
+		// AGC lives on the main panel now, so it's not in this list. OPTIONS
+		// opens the audio/DSP control menu (the GTK "Menu 1"); the GTK "Menu 2"
+		// scope/waterfall controls were dropped as they don't apply here.
+		// TUNE now lives on the voice-mode bottom row (see field_set_panel).
+		struct field *choice = dialog_box("Radio", "10M/12M/15M/17M/20M/30M/40M/60M/80M/VFO/SPLIT/RIT/SETUP/CW_INPUT/CW_DELAY/SIDETONE/OPTIONS/SHUTDOWN/CLOSE");
 		if (choice && !strcmp(choice->label, "SHUTDOWN")){
 			// Ask the user to confirm before powering off.
 			struct field *confirm = dialog_box("Shutdown zBitx OS?", "OK/CANCEL");
@@ -308,10 +317,22 @@ struct field *field_select(const char *label){
 				strcpy(message_buffer, "SHUTDOWN\n");
 			}
 		}
-		// SET now lives inside the Radio menu rather than on the main panel.
-		// Selecting it opens the Settings dialog (same list as before).
-		else if (choice && !strcmp(choice->label, "SET")){
-			dialog_box("Settings", "MY CALL/MYCALLSIGN/MY GRID/MYGRID/PASS KEY/PASSKEY/CLOSE");
+		// SETUP opens the station settings menu (callsign / grid / passkey).
+		// The MYCALLSIGN/MYGRID/PASSKEY fields post their own commands to the
+		// radio as they're edited, so the settings take effect directly — the
+		// GTK settings dialog is intentionally NOT opened (SETUP is excluded
+		// from auto-posting in field_select, so no "SETUP" command is sent).
+		else if (choice && !strcmp(choice->label, "SETUP")){
+			dialog_box("Setup", "MY CALL/MYCALLSIGN/MY GRID/MYGRID/PASS KEY/PASSKEY/CLOSE");
+		}
+		// OPTIONS mirrors the audio / DSP "Menu 1" on the GTK interface. Each
+		// control is a normal SELECTION/NUMBER field; editing it posts
+		// "LABEL value" to the radio over I2C, and the GTK side applies it.
+		// (TXEQ/RXEQ removed — equalizer is set on the GTK side. TUNE moved to
+		// the main Radio menu, below the 80M button.)
+		else if (choice && !strcmp(choice->label, "OPTIONS")){
+			dialog_box("Options",
+				"NOTCH/ANR/DSP/VFOLK/NFREQ/BNDWTH/BFO/TXMON/TNDUR/TNPWR/CLOSE");
 		}
 		return NULL;
 	}
@@ -402,7 +423,11 @@ struct field *field_select(const char *label){
   // emit the new value of the field to the radio
   // SHUTDOWN must never be auto-posted — the I2C message is sent only
   // after the user confirms on the second dialog (see the MENU handler above).
-  if (!strcmp(f->label, "SHUTDOWN"))
+  // SETUP must never be auto-posted either — the station settings are set
+  // directly by the MYCALLSIGN/MYGRID/PASSKEY field edits (each keystroke
+  // posts its own command), so the front panel should NOT also open the GTK
+  // settings dialog. Posting "SETUP" would trigger that dialog.
+  if (!strcmp(f->label, "SHUTDOWN") || !strcmp(f->label, "SETUP"))
     return f;
 	field_post_to_radio(f);
   return f;
