@@ -212,6 +212,11 @@ struct field main_list[] = {
   /* row 3 : numerics */
   {FIELD_NUMBER,    8,   144, 112, 48, TFT_BLACK, "TNDUR", "5",   "2/30/1"},
   {FIELD_NUMBER,    128, 144, 112, 48, TFT_BLACK, "TNPWR", "20",  "1/100/1"},
+  // COMP = speech compressor level, 0 (off) .. 10, mirroring the GTK's
+  // #comp_plugin selection. A SELECTION so it steps through the same discrete
+  // levels the GTK offers; editing posts "COMP <level>" and the GTK's
+  // do_comp_edit callback latches it (via the generic cmd_exec callback fire).
+  {FIELD_SELECTION, 248, 144, 112, 48, TFT_BLACK, "COMP", "0", "0/1/2/3/4/5/6/7/8/9/10"},
 
   /* Menu 2 (scope / waterfall / display controls) was intentionally removed —
      those settings don't apply to the front panel. If you ever want them back,

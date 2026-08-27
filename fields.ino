@@ -332,7 +332,7 @@ struct field *field_select(const char *label){
 		// the main Radio menu, below the 80M button.)
 		else if (choice && !strcmp(choice->label, "OPTIONS")){
 			dialog_box("Options",
-				"NOTCH/ANR/DSP/VFOLK/NFREQ/BNDWTH/BFO/TXMON/TNDUR/TNPWR/CLOSE");
+				"NOTCH/ANR/DSP/VFOLK/NFREQ/BNDWTH/BFO/TXMON/TNDUR/TNPWR/COMP/CLOSE");
 		}
 		return NULL;
 	}
