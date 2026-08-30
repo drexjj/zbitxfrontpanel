@@ -239,7 +239,16 @@ struct field main_list[] = {
   {FIELD_SELECTION, 24, 144, 96, 48, TFT_BLACK, "CW_INPUT", "", "IAMBIC/IAMBICB/STRAIGHT"},
   {FIELD_NUMBER, 144, 144, 96, 48, TFT_BLACK, "CW_DELAY", "300", "50/1000/50"},
   {FIELD_NUMBER, 264, 144, 96, 48,  TFT_BLACK, "SIDETONE", "80", "0/100/5"},
-	
+
+  // MACRO selection — sits on the y=144 row next to SIDETONE inside the Radio
+  // menu. Tapping cycles to the next macro and posts "MACRO <name>" over I2C;
+  // the GTK cmd_exec() handles that exactly like pressing its own #current_macro
+  // (MACRO) button: it runs macro_load() and latches #current_macro. The default
+  // list mirrors the GTK's initialize_macro_selection() fallback set. If the GTK
+  // side pushes an updated "MACRO <name>" back to the panel, field_set keeps the
+  // displayed value in sync (last-user-change guard in command_tokenize applies).
+  {FIELD_SELECTION, 384, 144, 96, 48, TFT_BLACK, "MACRO", "FT8", "FT8/CW1/CQWWRUN/RUN/SP"},
+
   {-1}
 };
 #endif
