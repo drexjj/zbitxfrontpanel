@@ -593,7 +593,7 @@ void smeter_draw(struct field *f){
 		return;
 	}
 
-	int s = atoi(field_get("SMETER")->value)/200;
+	int s = atoi(field_get("SMETER")->value)/100;
 	for (int i = 0 ; i < 6; i++){
 		int color = TFT_DARKGREY;
 		if (s >= i){
