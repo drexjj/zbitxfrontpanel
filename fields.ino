@@ -306,7 +306,7 @@ struct field *field_select(const char *label){
 		// opens the audio/DSP control menu (the GTK "Menu 1"); the GTK "Menu 2"
 		// scope/waterfall controls were dropped as they don't apply here.
 		// TUNE now lives on the voice-mode bottom row (see field_set_panel).
-		struct field *choice = dialog_box("Radio", "10M/12M/15M/17M/20M/30M/40M/60M/80M/VFO/SPLIT/RIT/SETUP/CW_INPUT/CW_DELAY/SIDETONE/OPTIONS/SHUTDOWN/CLOSE");
+		struct field *choice = dialog_box("Radio", "10M/12M/15M/17M/20M/30M/40M/60M/80M/VFO/SPLIT/RIT/SETUP/CW_INPUT/CW_DELAY/SIDETONE/MACRO/OPTIONS/SHUTDOWN/CLOSE");
 		if (choice && !strcmp(choice->label, "SHUTDOWN")){
 			// Ask the user to confirm before powering off.
 			struct field *confirm = dialog_box("Shutdown zBitx OS?", "OK/CANCEL");
@@ -593,7 +593,7 @@ void smeter_draw(struct field *f){
 		return;
 	}
 
-	int s = atoi(field_get("SMETER")->value)/200;
+	int s = atoi(field_get("SMETER")->value)/100;
 	for (int i = 0 ; i < 6; i++){
 		int color = TFT_DARKGREY;
 		if (s >= i){
