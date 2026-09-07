@@ -253,16 +253,16 @@ struct field main_list[] = {
   {FIELD_SELECTION, 384, 144, 96, 48, TFT_BLACK, "MACRO", "FT8", "FT8/CW1/CQWWRUN/RUN/SP"},
 
   /* Wi-Fi setup dialog (MENU -> WIFI). Pi pushes WIFI_STAT/WIFI_LIST; panel
-   * posts WSCAN/WCONN/WDISC. CLOSE (shared) is fixed at x=24,y=248. */
+   * posts SCAN/CONNECT/DISCONN. CLOSE (shared) is fixed at x=24,y=248. */
   {FIELD_STATIC,   8,  36, 464, 20, TFT_BLACK, "WIFI_STAT", "Not connected", ""},
-  {FIELD_STATIC,   8,  62, 232, 176, TFT_BLACK, "WIFI_LIST", "Tap SCAN to search", ""},
-  {FIELD_STATIC, 248,  62, 120, 20, TFT_BLACK, "WSSID_L", "SSID:", ""},
-  {FIELD_TEXT,   248,  84, 224, 26, TFT_BLACK, "WIFI_SSID", "", "0/40"},
-  {FIELD_STATIC, 248, 120, 120, 20, TFT_BLACK, "WPASS_L", "Password:", ""},
-  {FIELD_TEXT,   248, 142, 224, 26, TFT_BLACK, "WIFI_PASS", "", "0/64"},
-  {FIELD_BUTTON, 248, 248, 108, 48, TFT_BLUE, "WCONN", "CONNECT"},
-  {FIELD_BUTTON, 364, 248, 108, 48, TFT_RED,  "WDISC", "DISCONN"},
-  {FIELD_BUTTON, 132, 248, 108, 48, TFT_DARKGREEN, "WSCAN", "SCAN"},
+  {FIELD_STATIC,   8, 120, 464, 122, TFT_BLACK, "WIFI_LIST", "Tap SCAN to search", ""},
+  {FIELD_STATIC,   8,  62, 120, 20, TFT_BLACK, "WSSID_L", "SSID:", ""},
+  {FIELD_TEXT,     8,  84, 228, 26, TFT_BLACK, "WIFI_SSID", "", "0/40"},
+  {FIELD_STATIC, 244,  62, 120, 20, TFT_BLACK, "WPASS_L", "Password:", ""},
+  {FIELD_TEXT,   244,  84, 228, 26, TFT_BLACK, "WIFI_PASS", "", "0/64"},
+  {FIELD_BUTTON, 248, 248, 108, 48, TFT_BLUE, "CONNECT", ""},
+  {FIELD_BUTTON, 364, 248, 108, 48, TFT_RED,  "DISCONN", ""},
+  {FIELD_BUTTON, 132, 248, 108, 48, TFT_DARKGREEN, "SCAN", ""},
 
   {-1}
 };

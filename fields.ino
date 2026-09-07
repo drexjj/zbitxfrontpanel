@@ -349,18 +349,18 @@ struct field *field_select(const char *label){
 			strcpy(message_buffer, "WIFI status\n");
 			while (1){
 				struct field *w = dialog_box("Wi-Fi Setup",
-					"WIFI_STAT/WIFI_LIST/WSSID_L/WIFI_SSID/WPASS_L/WIFI_PASS/WSCAN/WCONN/WDISC/CLOSE");
+					"WIFI_STAT/WIFI_LIST/WSSID_L/WIFI_SSID/WPASS_L/WIFI_PASS/SCAN/CONNECT/DISCONN/CLOSE");
 				if (!w || !strcmp(w->label, "CLOSE"))
 					break;
-				if (!strcmp(w->label, "WSCAN")){
+				if (!strcmp(w->label, "SCAN")){
 					// Ask the Pi to (re)scan. Result arrives asynchronously in
 					// WIFI_LIST; the next dialog_box redraw shows it.
 					strcpy(message_buffer, "WIFI scan\n");
 				}
-				else if (!strcmp(w->label, "WDISC")){
+				else if (!strcmp(w->label, "DISCONN")){
 					strcpy(message_buffer, "WIFI disconnect\n");
 				}
-				else if (!strcmp(w->label, "WCONN")){
+				else if (!strcmp(w->label, "CONNECT")){
 					// Build "WIFI connect <ssid>\t<psk>" from the two text
 					// fields. TAB separates them because an SSID may contain
 					// spaces. An empty password is fine (open network) — the
@@ -476,16 +476,15 @@ struct field *field_select(const char *label){
   // directly by the MYCALLSIGN/MYGRID/PASSKEY field edits (each keystroke
   // posts its own command), so the front panel should NOT also open the GTK
   // settings dialog. Posting "SETUP" would trigger that dialog.
-  // The Wi-Fi dialog's action buttons (SCAN/CONNECT/DISCONN) must not
-  // auto-post their bare label either — the WIFI handler above sends the
-  // proper "WIFI ..." command strings itself. Posting "WSCAN"/"WCONN"/"WDISC"
-  // would just be an unknown command to the Pi. The "WIFI" menu button is
-  // likewise handled by the MENU dialog (it opens the Wi-Fi setup dialog), so
-  // a bare "WIFI" post is pointless — exclude it too.
+  // The Wi-Fi dialog's action buttons must not auto-post their bare label
+  // either — the WIFI handler above sends the proper "WIFI ..." command
+  // strings itself. Posting "SCAN"/"CONNECT"/"DISCONN" would just be an
+  // unknown command to the Pi. The "WIFI" menu button is likewise handled by
+  // the MENU dialog (it opens the Wi-Fi setup dialog), so exclude it too.
   if (!strcmp(f->label, "SHUTDOWN") || !strcmp(f->label, "SETUP") ||
       !strcmp(f->label, "WIFI") ||
-      !strcmp(f->label, "WSCAN") || !strcmp(f->label, "WCONN") ||
-      !strcmp(f->label, "WDISC"))
+      !strcmp(f->label, "SCAN") || !strcmp(f->label, "CONNECT") ||
+      !strcmp(f->label, "DISCONN"))
     return f;
 	field_post_to_radio(f);
   return f;
@@ -923,7 +922,7 @@ void field_draw_all(bool all){
 
   if (all)
     screen_fill_rect(0,0,SCREEN_WIDTH, SCREEN_HEIGHT,SCREEN_BACKGROUND_COLOR);
-	
+	set_bandwidth_strip();
   for (f = field_list; f->type != -1; f++)
     if ((all || f->redraw) && f->is_visible){
 			if (edit_mode == -1 || f->y + f->h < 144 || f->type == FIELD_KEY
