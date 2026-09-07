@@ -249,6 +249,30 @@ struct field main_list[] = {
   // displayed value in sync (last-user-change guard in command_tokenize applies).
   {FIELD_SELECTION, 384, 144, 96, 48, TFT_BLACK, "MACRO", "FT8", "FT8/CW1/CQWWRUN/RUN/SP"},
 
+  /* ---- Wi-Fi (wireless LAN) setup dialog ----
+   * Reached from MENU -> WIFI. The Pi Zero drives WIFI_STAT (current
+   * connection status) and WIFI_LIST (the scan result box) by pushing
+   * {WIFI_STAT ...} / {WIFI_LIST ...} blocks over I2C. The panel drives the
+   * radio by posting: WSCAN (button) -> "WIFI scan"; WDISC -> "WIFI disconnect";
+   * and, on connect, a raw "WIFI connect <ssid>\t<psk>" via message_buffer
+   * (see the WIFI handler in fields.ino). WIFI_SSID / WIFI_PASS are text fields
+   * the user fills in (WIFI_SSID can be pre-filled by tapping a scanned row).
+   *
+   * Layout inside the dialog (title bar occupies y=0..30):
+   *   row  y=40  : WIFI_STAT (full-width status line)
+   *   rows y=64  : WIFI_LIST (scan results box, left) + labels/entries (right)
+   *   row  y=248 : WSCAN / WCONN / WDISC / CLOSE buttons
+   */
+  {FIELD_STATIC,   8,  40, 464, 20, TFT_BLACK, "WIFI_STAT", "Not connected", ""},
+  {FIELD_STATIC,   8,  64, 240, 176, TFT_BLACK, "WIFI_LIST", "Tap SCAN to search", ""},
+  {FIELD_STATIC, 256,  64, 96, 20, TFT_BLACK, "WSSID_L", "SSID:", ""},
+  {FIELD_TEXT,   256,  86, 216, 24, TFT_BLACK, "WIFI_SSID", "", "0/40"},
+  {FIELD_STATIC, 256, 120, 96, 20, TFT_BLACK, "WPASS_L", "Password:", ""},
+  {FIELD_TEXT,   256, 142, 216, 24, TFT_BLACK, "WIFI_PASS", "", "0/64"},
+  {FIELD_BUTTON,   8, 248, 108, 48, TFT_DARKGREEN, "WSCAN", "SCAN"},
+  {FIELD_BUTTON, 124, 248, 108, 48, TFT_BLUE, "WCONN", "CONNECT"},
+  {FIELD_BUTTON, 240, 248, 108, 48, TFT_RED,  "WDISC", "DISCONN"},
+
   {-1}
 };
 #endif

@@ -33,7 +33,12 @@ unsigned int wheel_count = 0;
 volatile int vfwd=0, vswr=0, vref = 0, vbatt=0;
 int wheel_move = 0;
 
-char message_buffer[100];
+// One-shot raw command slot sent verbatim to the Pi on the next on_request().
+// Sized to hold the longest command we build here: "WIFI connect <ssid>\t<psk>"
+// where SSID can be up to 40 chars and the passphrase up to 64, plus the
+// prefix/TAB/newline. 100 bytes overflowed on long WPA passphrases; 200 gives
+// comfortable headroom and matches buff_i2c_req[200] on the send path.
+char message_buffer[200];
 
 int enc_state(){
   return  (digitalRead(ENC_A)? 1:0) + (digitalRead(ENC_B) ? 2:0);
@@ -385,7 +390,7 @@ void setup() {
 	attachInterrupt(ENC_A, on_enc, CHANGE);
 	attachInterrupt(ENC_B, on_enc, CHANGE);
 
-	field_set("9", "zBitx panel v5.05z\nWaiting for the zBitx to start...\n", false);
+	field_set("9", "zBitx panel v5.05f\nWaiting for the zBitx to start...\n", false);
 
 	if (digitalRead(ENC_S) == LOW)
 		reset_usb_boot(0,0); //invokes reset into bootloader mode

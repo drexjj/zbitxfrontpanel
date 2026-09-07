@@ -306,7 +306,7 @@ struct field *field_select(const char *label){
 		// opens the audio/DSP control menu (the GTK "Menu 1"); the GTK "Menu 2"
 		// scope/waterfall controls were dropped as they don't apply here.
 		// TUNE now lives on the voice-mode bottom row (see field_set_panel).
-		struct field *choice = dialog_box("Radio", "10M/12M/15M/17M/20M/30M/40M/60M/80M/VFO/SPLIT/RIT/SETUP/CW_INPUT/CW_DELAY/SIDETONE/MACRO/OPTIONS/SHUTDOWN/CLOSE");
+		struct field *choice = dialog_box("Radio", "10M/12M/15M/17M/20M/30M/40M/60M/80M/VFO/SPLIT/RIT/SETUP/CW_INPUT/CW_DELAY/SIDETONE/MACRO/OPTIONS/WIFI/SHUTDOWN/CLOSE");
 		if (choice && !strcmp(choice->label, "SHUTDOWN")){
 			// Ask the user to confirm before powering off.
 			struct field *confirm = dialog_box("Shutdown zBitx OS?", "OK/CANCEL");
@@ -333,6 +333,55 @@ struct field *field_select(const char *label){
 		else if (choice && !strcmp(choice->label, "OPTIONS")){
 			dialog_box("Options",
 				"NOTCH/ANR/DSP/VFOLK/NFREQ/BNDWTH/BFO/TXMON/TNDUR/TNPWR/COMP/CLOSE");
+		}
+		// WIFI opens the wireless-LAN setup dialog. Unlike the other menus,
+		// its buttons don't just post "LABEL value" — they trigger explicit
+		// "WIFI ..." commands to the Pi, which does all the NetworkManager work
+		// and pushes status/scan results back into WIFI_STAT / WIFI_LIST. The
+		// dialog stays open across SCAN/CONNECT/DISCONN (re-opened in a loop)
+		// so the user can scan, pick, type a password, and connect without
+		// leaving; only CLOSE exits. The SCAN/CONNECT/DISCONN buttons are
+		// excluded from field_select's auto-post (see the guard there), so we
+		// are the only thing that sends WIFI commands.
+		else if (choice && !strcmp(choice->label, "WIFI")){
+			// Kick off an initial status refresh so the user sees where they
+			// stand the moment the dialog opens.
+			strcpy(message_buffer, "WIFI status\n");
+			while (1){
+				struct field *w = dialog_box("Wi-Fi Setup",
+					"WIFI_STAT/WIFI_LIST/WSSID_L/WIFI_SSID/WPASS_L/WIFI_PASS/WSCAN/WCONN/WDISC/CLOSE");
+				if (!w || !strcmp(w->label, "CLOSE"))
+					break;
+				if (!strcmp(w->label, "WSCAN")){
+					// Ask the Pi to (re)scan. Result arrives asynchronously in
+					// WIFI_LIST; the next dialog_box redraw shows it.
+					strcpy(message_buffer, "WIFI scan\n");
+				}
+				else if (!strcmp(w->label, "WDISC")){
+					strcpy(message_buffer, "WIFI disconnect\n");
+				}
+				else if (!strcmp(w->label, "WCONN")){
+					// Build "WIFI connect <ssid>\t<psk>" from the two text
+					// fields. TAB separates them because an SSID may contain
+					// spaces. An empty password is fine (open network) — the
+					// Pi treats a trailing empty field as "no passphrase".
+					struct field *f_ssid = field_get("WIFI_SSID");
+					struct field *f_pass = field_get("WIFI_PASS");
+					if (f_ssid && strlen(f_ssid->value)){
+						snprintf(message_buffer, sizeof(message_buffer),
+							"WIFI connect %s\t%s\n",
+							f_ssid->value, f_pass ? f_pass->value : "");
+						// Clear the password field after use so it isn't left
+						// on screen; the SSID stays for reference.
+						if (f_pass){
+							f_pass->value[0] = 0;
+							f_pass->redraw = true;
+						}
+					}
+				}
+				// WIFI_SSID / WIFI_PASS taps open the keyboard and edit their
+				// own values via the normal text-field path; nothing to do here.
+			}
 		}
 		return NULL;
 	}
@@ -427,7 +476,13 @@ struct field *field_select(const char *label){
   // directly by the MYCALLSIGN/MYGRID/PASSKEY field edits (each keystroke
   // posts its own command), so the front panel should NOT also open the GTK
   // settings dialog. Posting "SETUP" would trigger that dialog.
-  if (!strcmp(f->label, "SHUTDOWN") || !strcmp(f->label, "SETUP"))
+  // The Wi-Fi dialog's action buttons (SCAN/CONNECT/DISCONN) must not
+  // auto-post their bare label either — the WIFI handler above sends the
+  // proper "WIFI ..." command strings itself. Posting "WSCAN"/"WCONN"/"WDISC"
+  // would just be an unknown command to the Pi.
+  if (!strcmp(f->label, "SHUTDOWN") || !strcmp(f->label, "SETUP") ||
+      !strcmp(f->label, "WSCAN") || !strcmp(f->label, "WCONN") ||
+      !strcmp(f->label, "WDISC"))
     return f;
 	field_post_to_radio(f);
   return f;
