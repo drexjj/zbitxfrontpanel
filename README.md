@@ -1,7 +1,12 @@
-# Current version is 5.05z
+# Current version is 5.05f
 
-## Build out your environment below on Pi or Linux
+## Download and Install Only
+You can simply download the compiled UF2 file and upload it to your zBitx. 
+Get it in the build folder at https://github.com/drexjj/zbitxfrontpanel/tree/main/build 
 
+
+
+## Build from scratch on Pi or Linux
 
 ## Step 1 — Install Arduino CLI
 

@@ -91,9 +91,6 @@ struct field main_list[] = {
   
   {FIELD_KEY, 0, 280, 72, 40,  TFT_BLACK, "Start", "Start"},
   {FIELD_KEY, 72, 280, 72, 40,  TFT_BLACK, "Stop", "Stop"},
-  // Shift key: toggles letter keys UPPER <-> lower. Shares the x=0,y=280 cell
-  // with Start (shown only for the CW TEXT field); keyboard_show() picks which.
-  {FIELD_KEY, 0, 280, 72, 40,  TFT_BLACK, "Shift", "abc"},
   {FIELD_KEY, 168, 280, 48, 40,  TFT_BLACK, "/", "\\"},
   {FIELD_KEY, 216, 280, 96, 40,  TFT_BLACK, "space", "space"},
   {FIELD_KEY, 312, 280, 48, 40,  TFT_BLACK, ".", ":"},

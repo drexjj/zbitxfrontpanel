@@ -31,7 +31,6 @@ static int measure_text(const char *text, int font){
 void key_draw(struct field *f){
 	int background_color = TFT_SKYBLUE;
 	int text_color = TFT_BLACK;
-	char text[30];
 
 	if (f->label[0] == '#' && f->label[0] == 0)
 		return;
@@ -51,25 +50,56 @@ void key_draw(struct field *f){
 			background_color = TFT_YELLOW;
 	}
 
-	int x = f->x + f->w/2;
-	if (edit_state == EDIT_STATE_SYM){
-	 x -= measure_text(f->value, ZBITX_FONT_LARGE)/2;
-		if (strlen(f->value) == 2 && f->value[0] == 'F')
-			background_color = TFT_GREEN;
+	// The Sym key cycles the keyboard through three layouts and shows the
+	// layout it will switch TO next: "ABC" (upper), "abc" (lower), "#@!" (sym).
+	if (!strcmp(f->label, "Sym")){
+		const char *sym_label;
+		if (edit_state == EDIT_STATE_LOWER)      sym_label = "ABC";
+		else if (edit_state == EDIT_STATE_UPPER) sym_label = "#@!";
+		else                                     sym_label = "abc";
+		screen_fill_round_rect(f->x+2, f->y+2, f->w-4, f->h-4, background_color);
+		int sx = f->x + f->w/2 - measure_text(sym_label, ZBITX_FONT_LARGE)/2;
+		screen_draw_text(sym_label, -1, sx, (f->y)+9, text_color, ZBITX_FONT_LARGE);
+		return;
 	}
-	else
-	 x -= measure_text(f->label, ZBITX_FONT_LARGE)/2;
-		
-	screen_fill_round_rect(f->x+2, f->y+2, f->w-4, f->h-4, background_color);
 
-  if (strlen(f->value)){
-    if(edit_state == EDIT_STATE_SYM)
-    	screen_draw_text(f->value, -1, x, (f->y)+9, text_color, ZBITX_FONT_LARGE);
-		else 
-    	screen_draw_text(f->label, -1, x, (f->y)+9, text_color, ZBITX_FONT_LARGE);
+	// Special-purpose keys always show their own label (never a symbol value or
+	// a case change), in every layout.
+	if (!strcmp(f->label, "del") || !strcmp(f->label, "[x]") ||
+		!strcmp(f->label, "space") || !strcmp(f->label, "Start") ||
+		!strcmp(f->label, "Stop")){
+		int lx = f->x + f->w/2 - measure_text(f->label, ZBITX_FONT_LARGE)/2;
+		screen_fill_round_rect(f->x+2, f->y+2, f->w-4, f->h-4, background_color);
+		screen_draw_text(f->label, -1, lx, (f->y)+9, text_color, ZBITX_FONT_LARGE);
+		return;
 	}
-  else 
-    screen_draw_text(f->label, -1, x, (f->y)+9, text_color, ZBITX_FONT_LARGE);
+
+	// Work out what glyph this key shows in the current layout.
+	//  - SYM layout: show the key's 'value' (its symbol), but blank out keys
+	//    whose value is a CW macro (F1..F9) or prosign (AR/BT) so no useless
+	//    keys clutter the symbol layout.
+	//  - letter layouts: show the label, lower-cased when in the lower layout.
+	char glyph[8];
+	if (edit_state == EDIT_STATE_SYM){
+		if ((f->value[0] == 'F' && isdigit(f->value[1])) ||
+			!strcmp(f->value, "AR") || !strcmp(f->value, "BT")){
+			// Draw a plain empty key (no glyph) and stop.
+			screen_fill_round_rect(f->x+2, f->y+2, f->w-4, f->h-4, background_color);
+			return;
+		}
+		strncpy(glyph, f->value, sizeof(glyph)-1);
+		glyph[sizeof(glyph)-1] = 0;
+	}
+	else {
+		strncpy(glyph, f->label, sizeof(glyph)-1);
+		glyph[sizeof(glyph)-1] = 0;
+		if (edit_state == EDIT_STATE_LOWER && glyph[1] == 0 && isalpha((unsigned char)glyph[0]))
+			glyph[0] = tolower((unsigned char)glyph[0]);
+	}
+
+	int x = f->x + f->w/2 - measure_text(glyph, ZBITX_FONT_LARGE)/2;
+	screen_fill_round_rect(f->x+2, f->y+2, f->w-4, f->h-4, background_color);
+	screen_draw_text(glyph, -1, x, (f->y)+9, text_color, ZBITX_FONT_LARGE);
 }
 
 void keyboard_redraw(){
@@ -91,20 +121,7 @@ char keyboard_read(struct field *key){
 	}
 
 
-	if (edit_state == EDIT_STATE_SYM){
-		if ( key->value[0] == 'F' && isdigit(key->value[1])){
-			struct field *f = field_select(key->value);
-			if (f)
-				field_post_to_radio(f);
-			return 0;
-		}
-		else if (!strcmp(key->value, "AR"))
-			return '+';
-		else if (!strcmp(key->value, "BT"))
-			return '&';
-	}
-
-  if (!strcmp(key->label, "space"))
+	if (!strcmp(key->label, "space"))
     c = ' ';
 	else if (!strcmp(key->label, "Start")){
 		struct field *f = field_get("Stop");
@@ -124,22 +141,36 @@ char keyboard_read(struct field *key){
 		field_set("TEXT", "", true);		
 	}
   else if (!strcmp(key->label, "Sym")){
-		if (edit_state == EDIT_STATE_SYM)
-			edit_state = EDIT_STATE_ALPHA;
-		else 
-    	edit_state = EDIT_STATE_SYM;
-		keyboard_redraw();		
+		// 3-way layout cycle: lower -> UPPER -> SYM -> lower.
+		if (edit_state == EDIT_STATE_LOWER)
+			edit_state = EDIT_STATE_UPPER;
+		else if (edit_state == EDIT_STATE_UPPER)
+			edit_state = EDIT_STATE_SYM;
+		else
+			edit_state = EDIT_STATE_LOWER;
+		// edit_mode also feeds the case/char decision below; keep it in sync
+		// with edit_state so it never forces the wrong case. (It stays != -1,
+		// so the keyboard remains "open".)
+		edit_mode = edit_state;
+		keyboard_redraw();
 		return 0;
 	}
   else if (!strcmp(key->label, "del"))
     c = 8;
   else {
-    if (edit_state == EDIT_STATE_SYM || edit_mode == EDIT_STATE_SYM)
-      c = key->value[0];
-    else if (edit_state == EDIT_STATE_UPPER || edit_mode == EDIT_STATE_UPPER)
-      c = toupper(key->label[0]);
-    else 
-      c = tolower(key->label[0]);
+		// Character to emit, driven solely by edit_state (single source of
+		// truth). SYM: emit the key's symbol value, but ignore the CW macro /
+		// prosign keys (F1..F9, AR, BT) which carry no useful character.
+		if (edit_state == EDIT_STATE_SYM){
+			if ((key->value[0] == 'F' && isdigit(key->value[1])) ||
+				!strcmp(key->value, "AR") || !strcmp(key->value, "BT"))
+				return 0;
+			c = key->value[0];
+		}
+		else if (edit_state == EDIT_STATE_UPPER)
+			c = toupper(key->label[0]);
+		else
+			c = tolower(key->label[0]);
   } 
   delay(10); // debounce for 10 msec    
 
@@ -149,6 +180,7 @@ char keyboard_read(struct field *key){
 
 void keyboard_show(uint8_t mode){
   edit_mode = mode;
+  edit_state = mode;   // draw + read now key off edit_state; open in this layout
 	struct field *f;
 
   // Keyboard keys span y=120..320 (5 rows x 40px). Clear exactly that region

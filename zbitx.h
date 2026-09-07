@@ -176,6 +176,7 @@ struct field *dialog_box(const char *title, char const *fields_list);
 
 /* keyboard */
 #define EDIT_STATE_ALPHA 0
+#define EDIT_STATE_LOWER 0
 #define EDIT_STATE_UPPER 1
 #define EDIT_STATE_SYM 2
 
