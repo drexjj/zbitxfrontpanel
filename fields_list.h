@@ -193,6 +193,13 @@ struct field main_list[] = {
   // so it doesn't overlap any other Radio-dialog control. Its label must stay
   // distinct from the main-panel "MENU" button above.
   {FIELD_BUTTON, 24, 196, 96, 48,  TFT_BLUE, "OPTIONS", ""},
+  // WIFI button — opens the wireless-LAN setup dialog. Shares the y=196 row
+  // with OPTIONS (x=24) and SETUP (x=126); placed at x=228 so it doesn't
+  // overlap either. Like SETUP/OPTIONS this is a real FIELD_BUTTON with its
+  // own coordinates: dialog_box() only toggles a field's visibility, it does
+  // NOT lay out or position menu items, so every entry named in a menu string
+  // MUST exist here as a field or it simply won't appear on screen.
+  {FIELD_BUTTON, 228, 196, 96, 48,  TFT_BLUE, "WIFI", ""},
   /* Shutdown button — only shown inside the MENU dialog, lower-right corner */
   {FIELD_BUTTON, 360, 248, 96, 48,  TFT_RED, "SHUTDOWN", ""},
 

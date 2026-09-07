@@ -479,8 +479,11 @@ struct field *field_select(const char *label){
   // The Wi-Fi dialog's action buttons (SCAN/CONNECT/DISCONN) must not
   // auto-post their bare label either — the WIFI handler above sends the
   // proper "WIFI ..." command strings itself. Posting "WSCAN"/"WCONN"/"WDISC"
-  // would just be an unknown command to the Pi.
+  // would just be an unknown command to the Pi. The "WIFI" menu button is
+  // likewise handled by the MENU dialog (it opens the Wi-Fi setup dialog), so
+  // a bare "WIFI" post is pointless — exclude it too.
   if (!strcmp(f->label, "SHUTDOWN") || !strcmp(f->label, "SETUP") ||
+      !strcmp(f->label, "WIFI") ||
       !strcmp(f->label, "WSCAN") || !strcmp(f->label, "WCONN") ||
       !strcmp(f->label, "WDISC"))
     return f;
