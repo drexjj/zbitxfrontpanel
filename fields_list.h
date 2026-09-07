@@ -5,10 +5,21 @@
 
 struct field main_list[] = {
 
+  //the first fields are always visible.
+  // Top status row: MENU + MODE + DRIVE + IF fill the left half, FREQ + AUDIO
+  // the right. DRIVE and IF are frequently adjusted during operation, so they
+  // live here at 64px each (up from the original cramped 48px). RIT is not on
+  // the panel — it's reached through the MENU dialog (see the MENU handler),
+  // since it's toggled far less often than drive/IF. FREQ keeps its 192px
+  // width and x=240 anchor (freq_draw / the METERS overlay depend on it).
   {FIELD_BUTTON, 0, 0, 48, 48,  TFT_ORANGE, "MENU", "-" },
   {FIELD_SELECTION, 48, 0, 64, 48,  TFT_BLACK, "MODE", "USB", "USB/LSB/CW/CWR/FT8/AM/DIGI/2TONE"},
   {FIELD_NUMBER, 112, 0, 64, 48,  TFT_BLACK, "DRIVE", "100", "0/100/5"},
   {FIELD_NUMBER, 176, 0, 64, 48,  TFT_BLACK, "IF", "40", "0/100/1"},
+  // FREQ + its S-meter/voltage overlay now sit flush against the right edge
+  // (x=288..480). AUDIO takes the slot to their left at x=240. freq_draw()
+  // positions all its text relative to the FREQ field's own x, so it follows
+  // automatically; the METERS overlay is moved to match (see below).
   {FIELD_NUMBER, 240, 0, 48, 48,  TFT_BLACK, "AUDIO", "95", "0/100/1"},
   {FIELD_FREQ, 288, 0, 192, 48,  TFT_BLACK, "FREQ", "14074000", "500000/30000000/1"},
 
@@ -16,6 +27,9 @@ struct field main_list[] = {
   {FIELD_NUMBER, 336, 48, 48, 48,  TFT_BLACK, "BW", "2200", "50/5000/50"},
   {FIELD_SELECTION, 384, 48, 48, 48,  TFT_BLACK, "STEP", "1K", "10K/1K/500H/100H/10H"},
   {FIELD_SELECTION, 432, 48, 48, 48,  TFT_BLACK, "AGC", "MED", "OFF/SLOW/MED/FAST"},
+  // SET moved into the MENU dialog (see the MENU handler). Its field
+  // definition now lives with the bandswitch/AGC/VFO group below, outside the
+  // always-on region, so it only appears as a button inside the Radio menu.
  
    //LOGGER FIELDS
   {FIELD_BUTTON, 0, 48, 48, 48,  TFT_DARKGREEN, "OPEN"},
@@ -27,7 +41,11 @@ struct field main_list[] = {
   {FIELD_TEXT, 144, 72, 48, 24, TFT_BLACK, "SENT", "", "0,10"},
   {FIELD_TEXT, 192, 72, 48, 24, TFT_BLACK, "NR", "", "0,10"},
 
+	//METERS is not SMETERS to prevent spiralling of request/responses.
+	// Kept 3px inside FREQ's left edge; moved with FREQ to x=291 (FREQ x=288).
   {FIELD_SMETER, 291, 3, 180, 15, TFT_BLACK, "METERS", "0", "0/10000/1"},
+  //keyboard fields, keeping them just under the permanent fields
+  //ensures that they get detected first  
 
   {FIELD_KEY, 0, 120, 48, 40,  TFT_BLACK, "1", "1"},
   {FIELD_KEY, 48, 120, 48, 40,  TFT_BLACK, "2", "2"},
@@ -73,6 +91,9 @@ struct field main_list[] = {
   
   {FIELD_KEY, 0, 280, 72, 40,  TFT_BLACK, "Start", "Start"},
   {FIELD_KEY, 72, 280, 72, 40,  TFT_BLACK, "Stop", "Stop"},
+  // Shift key: toggles letter keys UPPER <-> lower. Shares the x=0,y=280 cell
+  // with Start (shown only for the CW TEXT field); keyboard_show() picks which.
+  {FIELD_KEY, 0, 280, 72, 40,  TFT_BLACK, "Shift", "abc"},
   {FIELD_KEY, 168, 280, 48, 40,  TFT_BLACK, "/", "\\"},
   {FIELD_KEY, 216, 280, 96, 40,  TFT_BLACK, "space", "space"},
   {FIELD_KEY, 312, 280, 48, 40,  TFT_BLACK, ".", ":"},
@@ -105,6 +126,11 @@ struct field main_list[] = {
   {FIELD_NUMBER, 432, 272, 48, 48, TFT_BLACK, "PITCH", "600", "100/3000/10"},   
 
   //SSB/AM other voice modes
+  // Bottom row: MIC (72) + TX (156) + RX (156) + TUNE (96, flush right),
+  // filling the full 480px. TUNE emits a timed tuning carrier: tapping ON
+  // sends "TUNE ON" (keys TX at TNPWR power for TNDUR seconds, auto-stops);
+  // OFF sends "TUNE OFF". Orange to flag that it keys the transmitter.
+  // TNDUR/TNPWR live in the OPTIONS menu.
   {FIELD_NUMBER, 0, 272, 72, 48, TFT_BLACK, "MIC", "12", "0/100/5"},
   {FIELD_BUTTON, 72, 272, 156, 48, TFT_RED, "TX", ""},
   {FIELD_BUTTON, 228, 272, 156, 48, TFT_BLUE, "RX", ""},
@@ -153,15 +179,33 @@ struct field main_list[] = {
   {FIELD_BUTTON, 312, 48, 48, 48,  TFT_BLACK, "40M", "1"},
   {FIELD_BUTTON, 360, 48, 48, 48,  TFT_BLACK, "60M", "1"},
   {FIELD_BUTTON, 408, 48, 48, 48,  TFT_BLACK, "80M", "1"},
+  // AGC now lives on the main panel (top second row), so it's no longer
+  // defined here or shown in the Radio dialog. The y=96 dialog row is
+  // VFO / SPLIT / RIT / SET, tiled contiguously from the left.
   {FIELD_SELECTION, 24, 96, 48, 48,  TFT_BLACK, "VFO", "A", "A/B"},
   {FIELD_SELECTION, 72, 96, 48, 48,  TFT_BLACK, "SPLIT", "OFF", "ON/OFF"},
+  // RIT moved off the main panel into the MENU dialog, next to SPLIT.
   {FIELD_SELECTION, 120, 96, 48, 48,  TFT_BLACK, "RIT", "OFF", "ON/OFF"},
+  // SETUP moved to the 4th row (y=196), right of the OPTIONS button, so the
+  // y=96 row is just VFO/SPLIT/RIT. Opens the station settings menu
+  // (callsign / grid / passkey) and, in parallel, the GTK settings dialog.
   {FIELD_BUTTON, 126, 196, 96, 48,  TFT_BLUE, "SETUP", ""},
+  // OPTIONS button opens the GTK-mirrored audio/DSP control menu. Shown only
+  // inside the Radio dialog; shares the y=196 row with SET (bands are y=48,
+  // VFO/SPLIT/RIT y=96, CW input/delay/sidetone y=144, CLOSE/SHUTDOWN y=248),
+  // so it doesn't overlap any other Radio-dialog control. Its label must stay
+  // distinct from the main-panel "MENU" button above.
   {FIELD_BUTTON, 24, 196, 96, 48,  TFT_BLUE, "OPTIONS", ""},
+  // WIFI button: opens the Wi-Fi setup dialog (must exist here as a field, or
+  // dialog_box() can't show it).
   {FIELD_BUTTON, 228, 196, 96, 48,  TFT_BLUE, "WIFI", ""},
+  /* Shutdown button — only shown inside the MENU dialog, lower-right corner */
   {FIELD_BUTTON, 360, 248, 96, 48,  TFT_RED, "SHUTDOWN", ""},
 
-   // ---- Menu 1
+   /* ---- Menu 1 : audio / DSP signal-path controls ---- */
+  /* TXEQ and RXEQ were removed (equalizer is configured on the GTK side).
+     TUNE moved to the main Radio menu (below the 80M button). */
+  /* row 1 : toggles */
   {FIELD_SELECTION, 8,   40, 112, 48, TFT_BLACK, "NOTCH",  "OFF", "ON/OFF"},
   {FIELD_SELECTION, 128, 40, 112, 48, TFT_BLACK, "ANR",    "OFF", "ON/OFF"},
   {FIELD_SELECTION, 248, 40, 112, 48, TFT_BLACK, "DSP",    "OFF", "ON/OFF"},
@@ -174,10 +218,18 @@ struct field main_list[] = {
   /* row 3 : numerics */
   {FIELD_NUMBER,    8,   144, 112, 48, TFT_BLACK, "TNDUR", "5",   "2/30/1"},
   {FIELD_NUMBER,    128, 144, 112, 48, TFT_BLACK, "TNPWR", "20",  "1/100/1"},
-  // COMP = speech compressor level, 0 (off) .. 10
+  // COMP = speech compressor level, 0 (off) .. 10, mirroring the GTK's
+  // #comp_plugin selection. A SELECTION so it steps through the same discrete
+  // levels the GTK offers; editing posts "COMP <level>" and the GTK's
+  // do_comp_edit callback latches it (via the generic cmd_exec callback fire).
   {FIELD_SELECTION, 248, 144, 112, 48, TFT_BLACK, "COMP", "0", "0/1/2/3/4/5/6/7/8/9/10"},
 
-   /* settings */
+  /* Menu 2 (scope / waterfall / display controls) was intentionally removed —
+     those settings don't apply to the front panel. If you ever want them back,
+     they lived in the GTK menu2_display() as WFMIN/WFMAX/WFSPD/SCOPEGAIN/
+     SCOPEAVG/SCOPESIZE/INTENSITY/AUTOSCOPE/TXPANAFAL. */
+
+  /* settings */
 
   {FIELD_STATIC, 26,48, 96, 0, TFT_BLACK, "MY CALL", "MY CALL:", "0/10"},
   {FIELD_TEXT, 24, 62, 96, 24, TFT_BLACK, "MYCALLSIGN", "", "0/10"},
@@ -185,16 +237,26 @@ struct field main_list[] = {
   {FIELD_TEXT, 144, 62, 96, 24, TFT_BLACK, "MYGRID", "", "0/10"},
   {FIELD_STATIC, 266, 48, 96, 0, TFT_BLACK, "PASS KEY", "PASS KEY:", "0/10"},
   {FIELD_TEXT, 264, 62, 96, 24, TFT_BLACK, "PASSKEY", "", "0/10"},
-  // CW keyer input, CW delay, and sidetone level.
+  // CW keyer input, CW delay, and sidetone level. Moved from the Settings
+  // dialog into the Radio menu (see the MENU handler). Placed on the y=144
+  // row, below the AGC/VFO/SPLIT/RIT/SET row, so nothing overlaps. These
+  // fields draw their own labels (INPUT / DELAY / SIDETONE), so no separate
+  // static labels are needed.
   {FIELD_SELECTION, 24, 144, 96, 48, TFT_BLACK, "CW_INPUT", "", "IAMBIC/IAMBICB/STRAIGHT"},
   {FIELD_NUMBER, 144, 144, 96, 48, TFT_BLACK, "CW_DELAY", "300", "50/1000/50"},
   {FIELD_NUMBER, 264, 144, 96, 48,  TFT_BLACK, "SIDETONE", "80", "0/100/5"},
 
-  // MACRO selection
+  // MACRO selection — sits on the y=144 row next to SIDETONE inside the Radio
+  // menu. Tapping cycles to the next macro and posts "MACRO <name>" over I2C;
+  // the GTK cmd_exec() handles that exactly like pressing its own #current_macro
+  // (MACRO) button: it runs macro_load() and latches #current_macro. The default
+  // list mirrors the GTK's initialize_macro_selection() fallback set. If the GTK
+  // side pushes an updated "MACRO <name>" back to the panel, field_set keeps the
+  // displayed value in sync (last-user-change guard in command_tokenize applies).
   {FIELD_SELECTION, 384, 144, 96, 48, TFT_BLACK, "MACRO", "FT8", "FT8/CW1/CQWWRUN/RUN/SP"},
 
-  // ---- Wi-Fi (wireless LAN) setup dialog ----
-
+  /* Wi-Fi setup dialog (MENU -> WIFI). Pi pushes WIFI_STAT/WIFI_LIST; panel
+   * posts WSCAN/WCONN/WDISC. CLOSE (shared) is fixed at x=24,y=248. */
   {FIELD_STATIC,   8,  36, 464, 20, TFT_BLACK, "WIFI_STAT", "Not connected", ""},
   {FIELD_STATIC,   8,  62, 232, 176, TFT_BLACK, "WIFI_LIST", "Tap SCAN to search", ""},
   {FIELD_STATIC, 248,  62, 120, 20, TFT_BLACK, "WSSID_L", "SSID:", ""},

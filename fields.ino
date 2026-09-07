@@ -680,6 +680,13 @@ void smeter_draw(struct field *f){
 void field_static_draw(field *f){
 	char *p, text_line[FIELD_TEXT_MAX_LENGTH];
 
+	// Erase the field's area first. FIELD_STATIC is drawn on top of the plain
+	// dialog background, and screen_draw_text() doesn't clear behind itself, so
+	// a static whose value changes (e.g. WIFI_STAT cycling Not connected ->
+	// Scanning... -> SSID/IP, or the WIFI_LIST scan box) would otherwise paint
+	// each new string over the old one and smear into an unreadable overlap.
+	screen_fill_rect(f->x, f->y, f->w, f->h, SCREEN_BACKGROUND_COLOR);
+
 	p = f->value;
 	int y = f->y;
 	int i = 0;
