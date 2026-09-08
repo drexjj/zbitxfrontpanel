@@ -162,6 +162,7 @@ void field_show(const char *label, bool turn_on);
 struct field *field_get_selected();
 struct field *field_select(const char *label); //user has touched the field
 void field_input(uint8_t input); //user input to the field (could be just selection too)
+void field_tapped(struct field *f, uint16_t x, uint16_t y);
 void field_draw(struct field *f, bool all);
 void field_draw_all(bool all);
 void field_set_panel(const char *mode);

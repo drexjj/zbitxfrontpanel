@@ -929,6 +929,15 @@ void field_input(uint8_t input){
   f_selected->redraw = true;
 }
 
+// Called when a field is touched, with the absolute touch coordinates. For the
+// FT8 list this maps the tap to a message row and selects it (tap-to-call).
+void field_tapped(struct field *f, uint16_t x, uint16_t y){
+  if (f->type == FIELD_FT8){
+    ft8_touched(x - f->x, y - f->y);
+    f->redraw = true;
+  }
+}
+
 void field_draw_all(bool all){
   struct field *f;
 

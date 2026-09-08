@@ -25,10 +25,33 @@ void ft8_init(){
 }
 
 void ft8_select(){
-	char buff[200];
-
+	char *p, *q;
 	struct ft8_message *m = ft8_list + ft8_cursor;
-	sprintf(message_buffer, "FT8 %s\n", m->data);
+
+	// message_buffer is defined in the main .ino as char message_buffer[200];
+	// (extern here), so we can't sizeof() it — guard against the known length.
+	if (strlen(m->data) + 6 >= 200)
+		return;
+
+	// Build "FT8 <message>\n" into message_buffer, stripping the internal
+	// "#x" colour/slot id prefixes that tag each callsign token so the radio
+	// receives a clean message.
+	p = m->data;
+	strcpy(message_buffer, "FT8 ");
+	q = message_buffer + strlen(message_buffer);
+	while (*p){
+		//skip the '#x'
+		if (*p == '#'){
+			p++;
+			if (*p)
+				p++;
+			continue;
+		}
+		*q++ = *p++;
+	}
+	//close with a new line
+	*q++ = '\n';
+	*q = 0;
 }
 
 void ft8_update(const char *msg){
@@ -187,4 +210,16 @@ void ft8_input(int input){
 	else if (input == ZBITX_KEY_ENTER){
 		ft8_select();
 	}
+}
+
+// Tap-to-call: the user touched the FT8 list at (x_offset, y_offset) relative
+// to the field's top-left. Work out which visible row that maps to, move the
+// cursor there, and select it (which queues the "FT8 ..." message to the Pi).
+void ft8_touched(int x_offset, int y_offset){
+	int from_top = y_offset / screen_text_height(2);
+	ft8_cursor = ft8_top + from_top;
+	if (ft8_cursor >= FT8_MAX)
+		ft8_cursor -= FT8_MAX;
+	last_ft8_cursor_movement = millis();
+	ft8_select();
 }

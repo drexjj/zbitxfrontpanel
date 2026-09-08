@@ -347,6 +347,8 @@ struct field *ui_slice(){
   //do selection only if the touch has started
   if (!mouse_down){
     field_select(f->label);
+		if (f->type == FIELD_FT8)
+			field_tapped(f, x, y);
 		next_repeat_time = millis() + 1500;
 		f_touched = f;
 	}
