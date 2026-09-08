@@ -306,7 +306,7 @@ struct field *field_select(const char *label){
 		// opens the audio/DSP control menu (the GTK "Menu 1"); the GTK "Menu 2"
 		// scope/waterfall controls were dropped as they don't apply here.
 		// TUNE now lives on the voice-mode bottom row (see field_set_panel).
-		struct field *choice = dialog_box("Radio", "10M/12M/15M/17M/20M/30M/40M/60M/80M/VFO/SPLIT/RIT/SETUP/CW_INPUT/CW_DELAY/SIDETONE/MACRO/OPTIONS/WIFI/SHUTDOWN/CLOSE");
+		struct field *choice = dialog_box("Radio", "10M/12M/15M/17M/20M/30M/40M/60M/80M/VFO/SPLIT/RIT/SETUP/CW_INPUT/CW_DELAY/SIDETONE/MACRO/USB/OPTIONS/WIFI/SHUTDOWN/CLOSE");
 		if (choice && !strcmp(choice->label, "SHUTDOWN")){
 			// Ask the user to confirm before powering off.
 			struct field *confirm = dialog_box("Shutdown zBitx OS?", "OK/CANCEL");
@@ -324,6 +324,13 @@ struct field *field_select(const char *label){
 		// from auto-posting in field_select, so no "SETUP" command is sent).
 		else if (choice && !strcmp(choice->label, "SETUP")){
 			dialog_box("Setup", "MY CALL/MYCALLSIGN/MY GRID/MYGRID/PASS KEY/PASSKEY/CLOSE");
+		}
+		// USB toggles the Pi's USB port between CAT and Mouse/Keyboard mode by
+		// running /home/pi/usb-mode. We just fire the command; the Pi reads the
+		// current mode, switches to the other, and pushes {USB_MODE <text>}
+		// back so the button's value reflects the new state.
+		else if (choice && !strcmp(choice->label, "USB")){
+			strcpy(message_buffer, "USB toggle\n");
 		}
 		// OPTIONS mirrors the audio / DSP "Menu 1" on the GTK interface. Each
 		// control is a normal SELECTION/NUMBER field; editing it posts
@@ -482,7 +489,7 @@ struct field *field_select(const char *label){
   // unknown command to the Pi. The "WIFI" menu button is likewise handled by
   // the MENU dialog (it opens the Wi-Fi setup dialog), so exclude it too.
   if (!strcmp(f->label, "SHUTDOWN") || !strcmp(f->label, "SETUP") ||
-      !strcmp(f->label, "WIFI") ||
+      !strcmp(f->label, "WIFI") || !strcmp(f->label, "USB") ||
       !strcmp(f->label, "SCAN") || !strcmp(f->label, "CONNECT") ||
       !strcmp(f->label, "DISCONN"))
     return f;
@@ -768,6 +775,11 @@ void field_draw(struct field *f){
 				plabel = f->label;
 			else 
 				plabel++; //advance beyond the '_'	
+			// The USB button's field ID is kept space-free ("USB") so the Pi's
+			// {USB <mode>} value push matches (the block parser splits the label
+			// on the first space). Show the friendlier "USB_Mode" text instead.
+			if (!strcmp(f->label, "USB"))
+				plabel = "USB_Mode";
 			
       if (!strlen(f->value))
         screen_draw_text(plabel, -1, (f->x)+8, (f->y)+15, TFT_WHITE, ZBITX_FONT_NORMAL);

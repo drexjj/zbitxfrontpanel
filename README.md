@@ -1,4 +1,4 @@
-# Current version is 5.06f
+# Current version is 5.07f
 
 ## Download and Install Only
 You can simply download the compiled UF2 file and upload it to your zBitx. 

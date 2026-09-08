@@ -251,6 +251,11 @@ struct field main_list[] = {
   // side pushes an updated "MACRO <name>" back to the panel, field_set keeps the
   // displayed value in sync (last-user-change guard in command_tokenize applies).
   {FIELD_SELECTION, 384, 144, 96, 48, TFT_BLACK, "MACRO", "FT8", "FT8/CW1/CQWWRUN/RUN/SP"},
+  // USB mode toggle: runs /home/pi/usb-mode on the Pi to switch the USB port
+  // between CAT and Mouse/Keyboard modes. Sits directly below MACRO (x=384) in
+  // the Radio dialog. Its value shows the current mode, updated by the Pi
+  // pushing {USB_MODE <text>}. Tapping it posts "USB toggle" to the Pi.
+  {FIELD_BUTTON, 384, 196, 96, 48, TFT_BLUE, "USB", "CAT"},
 
   /* Wi-Fi setup dialog (MENU -> WIFI). Pi pushes WIFI_STAT/WIFI_LIST; panel
    * posts SCAN/CONNECT/DISCONN. CLOSE (shared) is fixed at x=24,y=248. */
