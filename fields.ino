@@ -638,9 +638,11 @@ void smeter_draw(struct field *f){
 
 	int v = vbatt/10;
 	sprintf(temp_str, "+%d.%dv", v/10, v%10);
-	// Placed at +130 (was +155): with the meter moved to the right edge the
-	// old offset ran the voltage text a few px off-screen. +130 keeps it inside.
-	screen_draw_text(temp_str, -1, f->x + 130, f->y+1, TFT_WHITE, 1);
+	// Battery voltage sits at the far right of the meter strip (offset +150).
+	// During TX the power/SWR readout below shares this row, so it uses a single
+	// space between "W" and "SWR" (rather than a wide pad) to keep the SWR text
+	// clear of the voltage.
+	screen_draw_text(temp_str, -1, f->x + 150, f->y+1, TFT_WHITE, 1);
 
 	struct field *f_tx = field_get("IN_TX");
 	if (!f_tx){
@@ -650,14 +652,35 @@ void smeter_draw(struct field *f){
 	int in_tx = atoi(f_tx->value);
 	 if (in_tx){
 		int display_vswr = (vswr > 0) ? vswr : 100;
-		sprintf(temp_str, "%d W            SWR %d.%d", vfwd/10, display_vswr/10, display_vswr%10); 
+
+		// TX meter strip, laid out as three non-overlapping zones so nothing
+		// draws over anything else (voltage sits further right at offset +150):
+		//   power number  "NW"      font2  at offset 3
+		//   power bar     box+fill         offset 42, width 52
+		//   SWR readout   "SWRn.n"  font1  at offset 100
+		// Power number.
+		sprintf(temp_str, "%dW", vfwd/10);
 		screen_draw_text(temp_str, -1, f->x + 3, f->y + 1, TFT_WHITE, 2);
-		screen_draw_rect(f->x + 33,  f->y + 2, 60, 12, TFT_YELLOW);
-		screen_fill_rect(f->x + 34,  f->y + 3, vfwd, 10, TFT_RED);
+
+		// Power bar: fixed yellow frame with a red fill proportional to power,
+		// clamped to the frame interior so it can never spill onto the text.
+		int bar_x = f->x + 42;
+		int bar_w = 52;
+		int fill = vfwd;               // ~10 per watt
+		if (fill > bar_w - 2)
+			fill = bar_w - 2;
+		if (fill < 0)
+			fill = 0;
+		screen_draw_rect(bar_x, f->y + 2, bar_w, 12, TFT_YELLOW);
+		screen_fill_rect(bar_x + 1, f->y + 3, fill, 10, TFT_RED);
+
+		// SWR readout in the clear zone to the right of the bar.
+		sprintf(temp_str, "SWR%d.%d", display_vswr/10, display_vswr%10);
+		screen_draw_text(temp_str, -1, f->x + 100, f->y + 2, TFT_WHITE, 1);
 		return;
 	}
 
-	int s = atoi(field_get("SMETER")->value)/100;
+	int s = atoi(field_get("SMETER")->value)/200;
 	for (int i = 0 ; i < 6; i++){
 		int color = TFT_DARKGREY;
 		if (s >= i){
