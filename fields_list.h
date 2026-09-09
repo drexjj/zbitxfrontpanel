@@ -183,6 +183,7 @@ struct field main_list[] = {
   {FIELD_SELECTION, 72, 96, 48, 48,  TFT_BLACK, "SPLIT", "OFF", "ON/OFF"},
   // RIT moved off the main panel into the MENU dialog, next to SPLIT.
   {FIELD_SELECTION, 120, 96, 48, 48,  TFT_BLACK, "RIT", "OFF", "ON/OFF"},
+  {FIELD_SELECTION, 168, 96, 48, 48,  TFT_BLACK, "1-TAP", "ON", "ON/OFF"},  
   // SETUP moved to the 4th row (y=196), right of the OPTIONS button, so the
   // y=96 row is just VFO/SPLIT/RIT. Opens the station settings menu
   // (callsign / grid / passkey) and, in parallel, the GTK settings dialog.

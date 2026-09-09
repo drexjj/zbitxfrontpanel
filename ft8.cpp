@@ -175,13 +175,22 @@ void ft8_draw(field *f){
   	    //F=white G=Green R=Red, S=Orange
     	  uint16_t color = TFT_WHITE;
       	switch(*p){
-   	   case 'G':
+   	    case 'G':
     	    color = TFT_GREEN;
       	  break;
       	case 'R':
         	color = TFT_CYAN;
         	break;
-   	   case 'S':
+		case 'Q':
+			color = TFT_BLUE;
+			break;
+		case 'O':
+			color = TFT_ORANGE;
+			break;
+		case 'H':
+			color = TFT_DARKGREY;
+			break;
+   	    case 'S':
     	    color = TFT_YELLOW;
       	  break;
     	  default:
@@ -212,14 +221,15 @@ void ft8_input(int input){
 	}
 }
 
-// Tap-to-call: the user touched the FT8 list at (x_offset, y_offset) relative
-// to the field's top-left. Work out which visible row that maps to, move the
-// cursor there, and select it (which queues the "FT8 ..." message to the Pi).
+// Tap-to-call addition
 void ft8_touched(int x_offset, int y_offset){
 	int from_top = y_offset / screen_text_height(2);
 	ft8_cursor = ft8_top + from_top;
 	if (ft8_cursor >= FT8_MAX)
 		ft8_cursor -= FT8_MAX;
 	last_ft8_cursor_movement = millis();
-	ft8_select();
+
+	struct field *single_tap = field_get("1-TAP");
+	if (single_tap && !strcmp(single_tap->value, "ON"))
+		ft8_select();
 }
