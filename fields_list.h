@@ -240,7 +240,7 @@ struct field main_list[] = {
   // row, below the AGC/VFO/SPLIT/RIT/SET row, so nothing overlaps. These
   // fields draw their own labels (INPUT / DELAY / SIDETONE), so no separate
   // static labels are needed.
-  {FIELD_SELECTION, 24, 144, 96, 48, TFT_BLACK, "CW_INPUT", "", "IAMBIC/IAMBICB/STRAIGHT"},
+  {FIELD_SELECTION, 24, 144, 96, 48, TFT_BLACK, "CW_INPUT", "", "IAMBIC/IAMBICB/STRAIGHT/ULTIMAT/BUG"},
   {FIELD_NUMBER, 144, 144, 96, 48, TFT_BLACK, "CW_DELAY", "300", "50/1000/50"},
   {FIELD_NUMBER, 264, 144, 96, 48,  TFT_BLACK, "SIDETONE", "80", "0/100/5"},
 
