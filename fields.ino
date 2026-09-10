@@ -7,6 +7,10 @@
 #include "console.h"
 
 struct field *f_selected = NULL;
+// Optional multi-line message drawn on the next dialog_box() between the title
+// bar and the buttons (lines separated by '\n'). NULL = no message. Set it
+// right before calling dialog_box() and clear it after.
+const char *dialog_message = NULL;
 extern volatile int vswr, vfwd, vref, vbatt;
 
 // True while a modal dialog (Radio menu, Settings, Shutdown confirm, Logbook)
@@ -99,6 +103,34 @@ struct field *dialog_box(const char *title, char const *fields_list){
   screen_fill_rect(0,0,SCREEN_WIDTH, SCREEN_HEIGHT,SCREEN_BACKGROUND_COLOR);
 	//screen_draw_text(title, -1, 10, 5, TFT_WHITE, 4);
 	screen_fill_rect(0,30, SCREEN_WIDTH, 1, TFT_WHITE);	
+
+	// Optional message, drawn enlarged and centred in the area between the
+	// title bar (y=30) and the buttons (y=248). Splits dialog_message on '\n'.
+	if (dialog_message){
+		char msg[300];
+		strncpy(msg, dialog_message, sizeof(msg) - 1);
+		msg[sizeof(msg) - 1] = 0;
+
+		// Count the lines first so we can vertically centre the block.
+		int n = 1;
+		for (char *c = msg; *c; c++)
+			if (*c == '\n') n++;
+
+		int line_h = screen_text_height(ZBITX_FONT_LARGE);
+		int block_h = n * line_h;
+		int y = 30 + ((248 - 30) - block_h) / 2;
+		if (y < 32) y = 32;
+
+		char *line = strtok(msg, "\n");
+		while (line){
+			int w = screen_text_width(line, ZBITX_FONT_LARGE);
+			int x = (SCREEN_WIDTH - w) / 2;
+			if (x < 4) x = 4;
+			screen_draw_text(line, -1, x, y, TFT_YELLOW, ZBITX_FONT_LARGE);
+			y += line_h;
+			line = strtok(NULL, "\n");
+		}
+	}
 
 	struct field *f_touched = NULL;
 	f_selected = NULL;
@@ -308,8 +340,20 @@ struct field *field_select(const char *label){
 		// TUNE now lives on the voice-mode bottom row (see field_set_panel).
 		struct field *choice = dialog_box("Radio", "10M/12M/15M/17M/20M/30M/40M/60M/80M/VFO/SPLIT/RIT/1-TAP/SETUP/CW_INPUT/CW_DELAY/SIDETONE/MACRO/USB/OPTIONS/WIFI/SHUTDOWN/CLOSE");
 		if (choice && !strcmp(choice->label, "SHUTDOWN")){
-			// Ask the user to confirm before powering off.
+			// Ask the user to confirm before powering off, with a reminder to
+			// close remote sessions and wait for the LED. dialog_message is
+			// drawn (enlarged) between the title bar and the OK/CANCEL buttons.
+			dialog_message =
+				"Close all remote\n"
+				"browser and VNC\n"
+				"sessions, then\n"
+				"wait for the\n"
+				"green LED to turn\n"
+				"off before\n"
+				"disconnecting\n"
+				"power.";
 			struct field *confirm = dialog_box("Shutdown zBitx OS?", "OK/CANCEL");
+			dialog_message = NULL;
 			if (confirm && !strcmp(confirm->label, "OK")){
 				// Send "SHUTDOWN" to the Pi Zero W over I2C.
 				// The Pi's zBitx software must handle this command with
@@ -680,7 +724,7 @@ void smeter_draw(struct field *f){
 		return;
 	}
 
-	int s = atoi(field_get("SMETER")->value)/250;
+	int s = atoi(field_get("SMETER")->value)/200;
 	for (int i = 0 ; i < 6; i++){
 		int color = TFT_DARKGREY;
 		if (s >= i){
