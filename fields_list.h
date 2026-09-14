@@ -235,6 +235,12 @@ struct field main_list[] = {
   {FIELD_TEXT, 144, 62, 96, 24, TFT_BLACK, "MYGRID", "", "0/10"},
   {FIELD_STATIC, 266, 48, 96, 0, TFT_BLACK, "PASS KEY", "PASS KEY:", "0/10"},
   {FIELD_TEXT, 264, 62, 96, 24, TFT_BLACK, "PASSKEY", "", "0/10"},
+  // Software versions, shown in the Setup window. PANELVER is filled from the
+  // ZBITX_PANEL_VERSION constant when the dialog opens; PIVERSION is pushed by
+  // the Pi (at init and in response to the "VERSION" command the panel sends
+  // when Setup opens).
+  {FIELD_STATIC, 26, 110, 200, 0, TFT_BLACK, "PANELVER", "Panel version: ---", ""},
+  {FIELD_STATIC, 26, 134, 200, 0, TFT_BLACK, "PIVERSION", "Software version: ---", ""},
   // CW keyer input, CW delay, and sidetone level. Moved from the Settings
   // dialog into the Radio menu (see the MENU handler). Placed on the y=144
   // row, below the AGC/VFO/SPLIT/RIT/SET row, so nothing overlaps. These

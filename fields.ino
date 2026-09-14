@@ -138,6 +138,11 @@ struct field *dialog_box(const char *title, char const *fields_list){
 	in_dialog = true;   // suppress the battery/S-meter overlay while modal
 	while(1){	
 		f_touched = ui_slice();
+		// Process any messages the Pi pushes while the dialog is open (e.g. the
+		// {PIVERSION ...} reply to a VERSION request). Without this the incoming
+		// queue only drains in loop(), which is blocked while we're modal here.
+		while (q_length(&q_incoming))
+			command_tokenize((char)q_read(&q_incoming));
 		if (f_touched && f_touched->type == FIELD_BUTTON){
 			break;	
 		}
@@ -367,7 +372,11 @@ struct field *field_select(const char *label){
 		// GTK settings dialog is intentionally NOT opened (SETUP is excluded
 		// from auto-posting in field_select, so no "SETUP" command is sent).
 		else if (choice && !strcmp(choice->label, "SETUP")){
-			dialog_box("Setup", "MY CALL/MYCALLSIGN/MY GRID/MYGRID/PASS KEY/PASSKEY/CLOSE");
+			// Fill in the panel's own version, and ask the Pi for its version
+			// (it replies by pushing {PIVERSION ...} into that field).
+			field_set("PANELVER", "Panel version: " ZBITX_PANEL_VERSION, false);
+			strcpy(message_buffer, "VERSION\n");
+			dialog_box("Setup", "MY CALL/MYCALLSIGN/MY GRID/MYGRID/PASS KEY/PASSKEY/PANELVER/PIVERSION/CLOSE");
 		}
 		// USB toggles the Pi's USB port between CAT and Mouse/Keyboard mode by
 		// running /home/pi/usb-mode. We just fire the command; the Pi reads the

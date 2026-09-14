@@ -2,6 +2,10 @@
 #define SCREEN_WIDTH 480
 #define SCREEN_HEIGHT 320
 
+// Front-panel firmware version. Single source of truth: used for the boot
+// console message and shown in the Setup window.
+#define ZBITX_PANEL_VERSION "5.11f"
+
 #define ZBITX_FONT_SMALL 1
 #define ZBITX_FONT_NORMAL 2
 #define ZBITX_FONT_LARGE 4 
@@ -111,6 +115,7 @@ struct field {
 void q_init(struct Queue *p);
 int q_length(struct Queue *p);
 int32_t q_read(struct Queue *p);
+void command_tokenize(char c);
 int q_write(struct Queue *p, int32_t w);
 void q_empty(struct Queue *p);
 #define MAX_QUEUE 4000
@@ -125,6 +130,7 @@ struct Queue
   unsigned int overflow;
   unsigned int max_q;
 };
+extern struct Queue q_incoming;
 
 #define FT8_MAX_DATA 100
 struct ft8_message {
