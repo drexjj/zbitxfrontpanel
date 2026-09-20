@@ -253,10 +253,14 @@ struct field main_list[] = {
   // MACRO selection — sits on the y=144 row next to SIDETONE inside the Radio
   // menu. Tapping cycles to the next macro and posts "MACRO <name>" over I2C;
   // the GTK cmd_exec() handles that exactly like pressing its own #current_macro
-  // (MACRO) button: it runs macro_load() and latches #current_macro. The default
-  // list mirrors the GTK's initialize_macro_selection() fallback set. If the GTK
-  // side pushes an updated "MACRO <name>" back to the panel, field_set keeps the
-  // displayed value in sync (last-user-change guard in command_tokenize applies).
+  // (MACRO) button: it runs macro_load() and latches #current_macro.
+  //
+  // The option list below is only a FALLBACK. Opening the Radio menu posts
+  // "MACROLIST" to the Pi, which scans ~/sbitx/web/ for .mc files and pushes
+  // "{MACROLIST a/b/c}" back; field_set() loads that into this field's selection
+  // buffer (see fields.ino), so the list is dynamic — drop a new .mc file on the
+  // Pi and it appears here on the next menu open, exactly like the GTK dropdown
+  // (initialize_macro_selection()). The fallback set matches GTK's fallback.
   {FIELD_SELECTION, 384, 144, 96, 48, TFT_BLACK, "MACRO", "FT8", "FT8/CW1/CQWWRUN/RUN/SP"},
   // USB mode toggle: runs /home/pi/usb-mode on the Pi to switch the USB port
   // between CAT and Mouse/Keyboard modes. Sits directly below MACRO (x=384) in

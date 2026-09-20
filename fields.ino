@@ -226,7 +226,26 @@ void field_set(const char *label, const char *value, bool update_to_radio){
 		f = field_get("LOGB");
 		logbook_update(value);
 	}
-  else 
+  // MACROLIST is not a field of its own: it carries the '/'-delimited list of
+  // macro files the Pi found in ~/sbitx/web/. Load it into the MACRO selection
+  // field's option list so tap-to-cycle walks the real files (mirrors the GTK
+  // dropdown). Keep the currently displayed value if it's still in the new list;
+  // otherwise fall back to the first option.
+  else if (!strcmp(label, "MACROLIST")){
+    struct field *mf = field_get("MACRO");
+    if (mf){
+      strncpy(mf->selection, value, sizeof(mf->selection) - 1);
+      mf->selection[sizeof(mf->selection) - 1] = 0;
+      // is the current value still present? if not, show the first option.
+      char b[128]; strncpy(b, mf->selection, sizeof b - 1); b[sizeof b - 1] = 0;
+      char *p = strtok(b, "/"); char *first = p; bool found = false;
+      while (p){ if (!strcmp(p, mf->value)){ found = true; break; } p = strtok(NULL, "/"); }
+      if (!found && first) strcpy(mf->value, first);
+      mf->redraw = true;
+    }
+    return;
+  }
+  else
     f = field_get(label);
 
   if (!f)
@@ -343,6 +362,12 @@ struct field *field_select(const char *label){
 		// opens the audio/DSP control menu (the GTK "Menu 1"); the GTK "Menu 2"
 		// scope/waterfall controls were dropped as they don't apply here.
 		// TUNE now lives on the voice-mode bottom row (see field_set_panel).
+		// Ask the Pi for the current macro list first (it replies by pushing
+		// {MACROLIST ...} into the MACRO field's selection). This keeps the MACRO
+		// selector in sync with the .mc files in ~/sbitx/web/ every time the menu
+		// opens, so newly added macros appear without a firmware change. The
+		// dialog loop processes the reply while it is open.
+		strcpy(message_buffer, "MACROLIST\n");
 		struct field *choice = dialog_box("Radio", "10M/12M/15M/17M/20M/30M/40M/60M/80M/VFO/SPLIT/RIT/1-TAP/SETUP/CW_INPUT/CW_DELAY/SIDETONE/MACRO/USB/OPTIONS/WIFI/SHUTDOWN/CLOSE");
 		if (choice && !strcmp(choice->label, "SHUTDOWN")){
 			// Ask the user to confirm before powering off, with a reminder to
