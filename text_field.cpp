@@ -37,7 +37,7 @@ void key_draw(struct field *f){
 
 	if (!strcmp(f->label, "del"))
 		background_color = TFT_RED;
-	else if (!strcmp(f->label, "[x]")){
+	else if (!strcmp(f->label, "ENTER")){
 		background_color = TFT_BLACK;
 		text_color = TFT_WHITE;
 	}
@@ -51,12 +51,14 @@ void key_draw(struct field *f){
 	}
 
 	// The Sym key cycles the keyboard through three layouts and shows the
-	// layout it will switch TO next: "ABC" (upper), "abc" (lower), "#@!" (sym).
+	// layout it will switch TO next. Cycle order is UPPER -> LOWER -> SYM ->
+	// UPPER, so from UPPER the next is "abc" (lower), from LOWER the next is
+	// "#@!" (sym), and from SYM the next is "ABC" (upper).
 	if (!strcmp(f->label, "Sym")){
 		const char *sym_label;
-		if (edit_state == EDIT_STATE_LOWER)      sym_label = "ABC";
-		else if (edit_state == EDIT_STATE_UPPER) sym_label = "#@!";
-		else                                     sym_label = "abc";
+		if (edit_state == EDIT_STATE_UPPER)      sym_label = "abc";
+		else if (edit_state == EDIT_STATE_LOWER) sym_label = "#@!";
+		else                                     sym_label = "ABC";
 		screen_fill_round_rect(f->x+2, f->y+2, f->w-4, f->h-4, background_color);
 		int sx = f->x + f->w/2 - measure_text(sym_label, ZBITX_FONT_LARGE)/2;
 		screen_draw_text(sym_label, -1, sx, (f->y)+9, text_color, ZBITX_FONT_LARGE);
@@ -65,7 +67,7 @@ void key_draw(struct field *f){
 
 	// Special-purpose keys always show their own label (never a symbol value or
 	// a case change), in every layout.
-	if (!strcmp(f->label, "del") || !strcmp(f->label, "[x]") ||
+	if (!strcmp(f->label, "del") || !strcmp(f->label, "ENTER") ||
 		!strcmp(f->label, "space") || !strcmp(f->label, "Start") ||
 		!strcmp(f->label, "Stop")){
 		int lx = f->x + f->w/2 - measure_text(f->label, ZBITX_FONT_LARGE)/2;
@@ -115,7 +117,9 @@ char keyboard_read(struct field *key){
   if (!key)
     return 0;
   char c = 0;
-  if(!strcmp(key->label, "[x]")){
+  // The ENTER key dismisses the on-screen keyboard: it confirms/closes the
+  // text input rather than inserting a newline.
+  if(!strcmp(key->label, "ENTER")){
 		keyboard_hide();
 		return 0;
 	}
@@ -141,13 +145,13 @@ char keyboard_read(struct field *key){
 		field_set("TEXT", "", true);		
 	}
   else if (!strcmp(key->label, "Sym")){
-		// 3-way layout cycle: lower -> UPPER -> SYM -> lower.
-		if (edit_state == EDIT_STATE_LOWER)
-			edit_state = EDIT_STATE_UPPER;
-		else if (edit_state == EDIT_STATE_UPPER)
+		// 3-way layout cycle: UPPER -> LOWER -> SYM -> UPPER.
+		if (edit_state == EDIT_STATE_UPPER)
+			edit_state = EDIT_STATE_LOWER;
+		else if (edit_state == EDIT_STATE_LOWER)
 			edit_state = EDIT_STATE_SYM;
 		else
-			edit_state = EDIT_STATE_LOWER;
+			edit_state = EDIT_STATE_UPPER;
 		// edit_mode also feeds the case/char decision below; keep it in sync
 		// with edit_state so it never forces the wrong case. (It stays != -1,
 		// so the keyboard remains "open".)

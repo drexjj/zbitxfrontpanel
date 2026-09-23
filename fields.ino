@@ -471,7 +471,7 @@ struct field *field_select(const char *label){
 		return NULL;
 	}
 
-	if (!strcmp(f->label, "[x]")){
+	if (!strcmp(f->label, "ENTER")){
 		keyboard_hide();
 	}
 
@@ -571,7 +571,22 @@ struct field *field_select(const char *label){
       !strcmp(f->label, "SCAN") || !strcmp(f->label, "CONNECT") ||
       !strcmp(f->label, "DISCONN"))
     return f;
-	field_post_to_radio(f);
+
+	// Do NOT post a value-holding input field to the radio just because it was
+	// focused. FIELD_TEXT (MYCALLSIGN/MYGRID/PASSKEY/TEXT/WIFI_*), FIELD_FREQ
+	// (FREQ) and FIELD_NUMBER (DRIVE/IF/AUDIO/SIDETONE/CW_DELAY... several of
+	// which the Pi stores per band in its band stack) all push their REAL edits
+	// on their own: text fields post per keystroke (see field_text_editor),
+	// numeric/freq fields post from the encoder path (see field_input). Posting
+	// here on mere focus would send the field's CURRENT value up -- and right
+	// after a UF2 reflash that value is a stale power-on default (empty
+	// callsign, 14.074 MHz, default drive), which overwrites and wipes the
+	// callsign/grid/passkey/bandstack the Pi loaded from user_settings.ini.
+	// SELECTION fields (MODE/VFO/SPLIT/RIT/STEP) changed their value in the
+	// cycle above, and buttons carry an action, so those still post.
+	if (f->type != FIELD_TEXT && f->type != FIELD_FREQ &&
+	    f->type != FIELD_NUMBER)
+		field_post_to_radio(f);
   return f;
 }
 

@@ -392,7 +392,9 @@ void setup() {
 	attachInterrupt(ENC_A, on_enc, CHANGE);
 	attachInterrupt(ENC_B, on_enc, CHANGE);
 
-	field_set("9", "zBitx panel v5.10f\nWaiting for the zBitx to start...\n", false);
+	// Boot banner: no version here. The panel version is shown in the Radio ->
+	// Setup window (the PANELVER field), not written to the console.
+	field_set("9", "Waiting for the zBitx to start...\n", false);
 
 	if (digitalRead(ENC_S) == LOW)
 		reset_usb_boot(0,0); //invokes reset into bootloader mode

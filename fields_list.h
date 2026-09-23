@@ -58,9 +58,15 @@ struct field main_list[] = {
   {FIELD_KEY, 384, 120, 48, 40,  TFT_BLACK, "9", "9"},
   {FIELD_KEY, 432, 120, 48, 40,  TFT_BLACK, "0", "0"},
 
+  // Second column of each key below is the SYM-layout glyph. The letter rows
+  // carry a full 101-key US symbol complement: the top row keeps the common
+  // ones and adds + and &, the home row adds % ^ and the bracket/brace/angle
+  // and pipe set. (These slots previously held CW prosign/macro tags AR/BT and
+  // F1..F9, which the keyboard code only ever drew as blanks in SYM, so nothing
+  // functional is lost.)
   {FIELD_KEY, 0, 160, 48, 40,  TFT_BLACK, "Q", "@"},
-  {FIELD_KEY, 48, 160, 48, 40,  TFT_BLACK, "W", "AR"},
-  {FIELD_KEY, 96, 160, 48, 40,  TFT_BLACK, "E", "BT"},
+  {FIELD_KEY, 48, 160, 48, 40,  TFT_BLACK, "W", "+"},
+  {FIELD_KEY, 96, 160, 48, 40,  TFT_BLACK, "E", "&"},
   {FIELD_KEY, 144, 160, 48, 40,  TFT_BLACK, "R", "#"},
   {FIELD_KEY, 192, 160, 48, 40,  TFT_BLACK, "T", "$"},
   {FIELD_KEY, 240, 160, 48, 40,  TFT_BLACK, "Y", "*"},
@@ -69,15 +75,15 @@ struct field main_list[] = {
   {FIELD_KEY, 384, 160, 48, 40,  TFT_BLACK, "O", "-"},
   {FIELD_KEY, 432, 160, 48, 40,  TFT_BLACK, "P", "="},
 
-  {FIELD_KEY, 24, 200, 48, 40,  TFT_BLACK, "A", "F1"},
-  {FIELD_KEY, 72, 200, 48, 40,  TFT_BLACK, "S", "F2"},
-  {FIELD_KEY, 120, 200, 48, 40,  TFT_BLACK, "D", "F3"},
-  {FIELD_KEY, 168, 200, 48, 40,  TFT_BLACK, "F", "F4"},
-  {FIELD_KEY, 216, 200, 48, 40,  TFT_BLACK, "G", "F5"},
-  {FIELD_KEY, 264, 200, 48, 40,  TFT_BLACK, "H", "F6"},
-  {FIELD_KEY, 312, 200, 48, 40,  TFT_BLACK, "J", "F7"},
-  {FIELD_KEY, 360, 200, 48, 40,  TFT_BLACK, "K", "F8"},
-  {FIELD_KEY, 408, 200, 48, 40,  TFT_BLACK, "L", "F9"},
+  {FIELD_KEY, 24, 200, 48, 40,  TFT_BLACK, "A", "%"},
+  {FIELD_KEY, 72, 200, 48, 40,  TFT_BLACK, "S", "^"},
+  {FIELD_KEY, 120, 200, 48, 40,  TFT_BLACK, "D", "<"},
+  {FIELD_KEY, 168, 200, 48, 40,  TFT_BLACK, "F", ">"},
+  {FIELD_KEY, 216, 200, 48, 40,  TFT_BLACK, "G", "["},
+  {FIELD_KEY, 264, 200, 48, 40,  TFT_BLACK, "H", "]"},
+  {FIELD_KEY, 312, 200, 48, 40,  TFT_BLACK, "J", "{"},
+  {FIELD_KEY, 360, 200, 48, 40,  TFT_BLACK, "K", "}"},
+  {FIELD_KEY, 408, 200, 48, 40,  TFT_BLACK, "L", "|"},
   
   {FIELD_KEY, 0, 240, 72, 40,  TFT_BLACK, "Sym", "ABC"}, 
   {FIELD_KEY, 72, 240, 48, 40,  TFT_BLACK, "Z", "~"},
@@ -92,10 +98,16 @@ struct field main_list[] = {
   {FIELD_KEY, 0, 280, 72, 40,  TFT_BLACK, "Start", "Start"},
   {FIELD_KEY, 72, 280, 72, 40,  TFT_BLACK, "Stop", "Stop"},
   {FIELD_KEY, 168, 280, 48, 40,  TFT_BLACK, "/", "\\"},
-  {FIELD_KEY, 216, 280, 96, 40,  TFT_BLACK, "space", "space"},
-  {FIELD_KEY, 312, 280, 48, 40,  TFT_BLACK, ".", ":"},
-  {FIELD_KEY, 360, 280, 48, 40,  TFT_BLACK, "?", ","},
-  {FIELD_KEY, 432, 280, 48, 40,  TFT_BLACK, "[x]", "[x]"},  
+  // Space bar trimmed from 96 to 72 to make room for the Enter key. Enter is a
+  // special key (like del/space): it shows its own label in every layout and,
+  // when pressed, closes the text input.
+  {FIELD_KEY, 216, 280, 72, 40,  TFT_BLACK, "space", "space"},
+  {FIELD_KEY, 288, 280, 48, 40,  TFT_BLACK, ".", ":"},
+  {FIELD_KEY, 336, 280, 48, 40,  TFT_BLACK, "?", ","},
+  // ENTER closes the text input. It spans the full 96px at the end of the row
+  // (the old [x] close box was removed as a duplicate), wide enough to spell
+  // out its label.
+  {FIELD_KEY, 384, 280, 96, 40,  TFT_BLACK, "ENTER", "ENTER"},
 
   {FIELD_BUTTON, 0, 272, 48, 48,  TFT_BLACK, "ESC", ""},
   {FIELD_BUTTON, 48, 272, 48, 48,  TFT_BLACK, "F1", "CQ"},

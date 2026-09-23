@@ -52,7 +52,7 @@ arduino-cli compile \
 
 
 ## Notes:
-You can also change the version number displayed in the zbitxfrontpanel.ino file
+You can also change the version number displayed in the zbitx.h file
 
 ## Troubleshooting
 You may get a compiler error in some Linux systems depending on your configuration. Many times, this can be resolved by copying the TFT_setup.h file to your arduino library directory and rename it to user_setup.h 
