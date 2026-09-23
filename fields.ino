@@ -750,7 +750,7 @@ void smeter_draw(struct field *f){
 		// draws over anything else (voltage sits further right at offset +150):
 		//   power number  "NW"      font2  at offset 3
 		//   power bar     box+fill         offset 42, width 52
-		//   SWR readout   "SWRn.n"  font1  at offset 100
+		//   SWR readout   "SWR n.n"  font1  at offset 100
 		// Power number.
 		sprintf(temp_str, "%dW", vfwd/10);
 		screen_draw_text(temp_str, -1, f->x + 3, f->y + 1, TFT_WHITE, 2);
@@ -768,7 +768,7 @@ void smeter_draw(struct field *f){
 		screen_fill_rect(bar_x + 1, f->y + 3, fill, 10, TFT_RED);
 
 		// SWR readout in the clear zone to the right of the bar.
-		sprintf(temp_str, "SWR%d.%d", display_vswr/10, display_vswr%10);
+		sprintf(temp_str, "SWR %d.%d", display_vswr/10, display_vswr%10);
 		screen_draw_text(temp_str, -1, f->x + 100, f->y + 2, TFT_WHITE, 1);
 		return;
 	}

@@ -4,7 +4,7 @@
 
 // Front-panel firmware version. Single source of truth: used for the boot
 // console message and shown in the Setup window.
-#define ZBITX_PANEL_VERSION "5.12f"
+#define ZBITX_PANEL_VERSION "5.13f"
 
 #define ZBITX_FONT_SMALL 1
 #define ZBITX_FONT_NORMAL 2
