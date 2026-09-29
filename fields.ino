@@ -294,7 +294,11 @@ void field_set(const char *label, const char *value, bool update_to_radio){
 	else {
     if (!strcmp(label, "MODE"))
       field_set_panel(value);
-    strcpy(f->value, value);
+    // value arrives from a 1000-byte command buffer but the field only holds
+    // FIELD_TEXT_MAX_LENGTH; an unbounded strcpy here overran into the next
+    // members (selection, draw pointer) and neighbouring fields.
+    strncpy(f->value, value, FIELD_TEXT_MAX_LENGTH - 1);
+    f->value[FIELD_TEXT_MAX_LENGTH - 1] = 0;
   }
   f->redraw = true;
 }
