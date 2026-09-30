@@ -154,9 +154,15 @@ void command_tokenize(char c){
   else if (c == COMMAND_END){
 		if (strlen(cmd_label)){
 			struct field *f = field_get(cmd_label);
-			if (!f)  // some are not really fields but just updates, like QSO
-     		field_set(cmd_label, cmd_value, false);
-      else if (f->last_user_change + 1000 < now || f->type == FIELD_TEXT)
+			bool accept = true;
+			if (f && strcmp(f->label, "TEXT") && f->type != FIELD_WATERFALL
+					&& f->type != FIELD_BUTTON){
+				bool recent = f->last_user_change != 0 &&
+					(unsigned long)(now - f->last_user_change) < 1000;
+				if (f->update_to_radio || recent)
+					accept = false;
+			}
+			if (accept)  // some are not really fields but just updates, like QSO
      		field_set(cmd_label, cmd_value, false);
 			if (!strcmp(cmd_label, "HIGH") || !strcmp(cmd_label, "LOW") || !strcmp(cmd_label, "PITCH")
 				|| !strcmp(cmd_label, "SPAN") || !strcmp(cmd_label, "MODE"))
@@ -301,6 +307,9 @@ struct field *ui_slice(){
   uint16_t x, y;
 	struct field *f_touched = NULL;
 
+	// keep the clock current: dialog_box() calls ui_slice() in its own loop,
+	// so loop() doesn't run (and doesn't update 'now') while a menu is open.
+	now = millis();
 	//check if messages need to be processed
   while(q_length(&q_incoming))
     command_tokenize((char)q_read(&q_incoming));
@@ -395,6 +404,13 @@ void setup() {
 	// Boot banner: no version here. The panel version is shown in the Radio ->
 	// Setup window (the PANELVER field), not written to the console.
 	field_set("9", "Waiting for the zBitx to start...\n", false);
+
+	// Ask the Pi to push every field. If the Pi software is already running
+	// (this is a panel reset / reflash, not a cold power-up) it would otherwise
+	// only send fields that change from now on, and the panel would keep its
+	// compiled-in defaults instead of the values from user_settings.ini.
+	// Older Pi software simply ignores the unknown SYNC command.
+	strcpy(message_buffer, "SYNC\n");
 
 	if (digitalRead(ENC_S) == LOW)
 		reset_usb_boot(0,0); //invokes reset into bootloader mode
