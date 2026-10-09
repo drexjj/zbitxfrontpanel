@@ -2,9 +2,9 @@
 #define SCREEN_WIDTH 480
 #define SCREEN_HEIGHT 320
 
-// Front-panel firmware version. Single source of truth: used for the boot
+// Front-panel firmware version. Used for the boot
 // console message and shown in the Setup window.
-#define ZBITX_PANEL_VERSION "5.14f"
+#define ZBITX_PANEL_VERSION "5.15f"
 
 #define ZBITX_FONT_SMALL 1
 #define ZBITX_FONT_NORMAL 2
