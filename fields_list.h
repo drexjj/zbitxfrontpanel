@@ -128,7 +128,10 @@ struct field main_list[] = {
   {FIELD_SELECTION, 336, 272, 48, 48,  TFT_BLACK, "TX1ST", "ON", "ON/OFF"},
   {FIELD_SELECTION, 384, 272, 48, 48,  TFT_BLACK, "AUTO", "ON", "ON/OFF"},
   {FIELD_NUMBER, 432, 272, 48, 48,  TFT_BLACK, "FT8_REPEAT", "5", "1/10/1"},
-  {FIELD_FT8, 240, 96, 240, 176,  TFT_BLACK, "FT8_LIST", "", "1/10/1"},
+  // ALL / CQ ONLY switch for the decode list, mirrored with the radio's
+  // FT8_FILTER setting (and the web UI). It takes the top 24px of the list.
+  {FIELD_SELECTION, 240, 96, 240, 24,  TFT_BLACK, "FT8_FILTER", "ALL", "ALL/CQ", ft8_filter_draw},
+  {FIELD_FT8, 240, 120, 240, 152,  TFT_BLACK, "FT8_LIST", "", "1/10/1"},
 
   //CW controls
   {FIELD_NUMBER, 382, 272, 48, 48, TFT_BLACK, "WPM", "12", "3/50/1"},

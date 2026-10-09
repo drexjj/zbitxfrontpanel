@@ -4,3 +4,5 @@ void ft8_draw(field *f);
 void ft8_input(int input);
 void ft8_touched(int x_offset, int y_offset);
 void ft8_init();
+void ft8_filter_draw(struct field *f);
+void ft8_filter_changed();

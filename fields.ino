@@ -183,7 +183,7 @@ void field_set_panel(const char *mode){
   struct field *f_wf = field_get("WF");
 
   if (!strcmp(mode, "FT8")){
-    strcpy(list, "ESC/F1/F2/F3/F4/F5/TX_PITCH/AUTO/TX1ST/FT8_REPEAT/FT8_LIST/WF");
+    strcpy(list, "ESC/F1/F2/F3/F4/F5/TX_PITCH/AUTO/TX1ST/FT8_REPEAT/FT8_FILTER/FT8_LIST/WF");
     if (f_wf){ f_wf->w = 240; f_wf->redraw = true; }
   }
   else if (!strcmp(mode, "CW") || !strcmp(mode, "CWR")){
@@ -220,7 +220,8 @@ void field_set(const char *label, const char *value, bool update_to_radio){
   //translate a few fields 
   if (!strcmp(label, "9") || !strcmp(label, "10") || !strcmp(label, "5"))
     f = field_get("CONSOLE");
-  else if (!strcmp(label, "6") || !strcmp(label, "7"))
+  // 6 = decode, 7 = our transmission, 15 = a decode addressed to us
+  else if (!strcmp(label, "6") || !strcmp(label, "7") || !strcmp(label, "15"))
     f = field_get("FT8_LIST");
 	else if (!strcmp(label, "QSO")){
 		f = field_get("LOGB");
@@ -297,8 +298,11 @@ void field_set(const char *label, const char *value, bool update_to_radio){
     // value arrives from a 1000-byte command buffer but the field only holds
     // FIELD_TEXT_MAX_LENGTH; an unbounded strcpy here overran into the next
     // members (selection, draw pointer) and neighbouring fields.
+    bool changed = strcmp(f->value, value) != 0;
     strncpy(f->value, value, FIELD_TEXT_MAX_LENGTH - 1);
     f->value[FIELD_TEXT_MAX_LENGTH - 1] = 0;
+    if (changed && !strcmp(f->label, "FT8_FILTER"))
+      ft8_filter_changed();
   }
   f->redraw = true;
 }
@@ -550,6 +554,8 @@ struct field *field_select(const char *label){
       else
         strcpy(f->value, first); // roll over
     }
+    if (!strcmp(f->label, "FT8_FILTER"))
+      ft8_filter_changed();
   }
   else if (f->type == FIELD_TEXT){
     keyboard_show(EDIT_STATE_UPPER);
@@ -975,6 +981,9 @@ void field_input(uint8_t input){
       if (!strcmp(f_selected->label, "MODE"))
         field_set_panel(f_selected->value);
     }
+    // encoder turned on the ALL / CQ ONLY switch
+    if (!strcmp(f_selected->label, "FT8_FILTER"))
+      ft8_filter_changed();
   } 
   else if (f_selected->type == FIELD_NUMBER){
     char buff[100];
