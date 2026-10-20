@@ -176,6 +176,12 @@ struct field main_list[] = {
 
 	{FIELD_TITLE, 24, 8, SCREEN_WIDTH-96, 48, TFT_BLACK, "TITLE", "Hi", ""}, 	
 	{FIELD_STATIC, 24, 96, SCREEN_WIDTH-96,  100, TFT_BLACK, "MESSAGE", "Hi", ""}, 	
+  /* Software update screens (MENU -> UPDATE). UPD_CUR / UPD_NEW are the
+     installed and available versions, UPD_STAT the explanation or progress.
+     All three are pushed by the Pi; h is set so a new value erases the old. */
+  {FIELD_STATIC, 24, 44, SCREEN_WIDTH-48, 20, TFT_BLACK, "UPD_CUR", "Installed: ---", ""},
+  {FIELD_STATIC, 24, 68, SCREEN_WIDTH-48, 20, TFT_BLACK, "UPD_NEW", "Available: ---", ""},
+  {FIELD_STATIC, 24, 104, SCREEN_WIDTH-48, 136, TFT_BLACK, "UPD_STAT", "", ""},
   {FIELD_BUTTON, 24, 248, 96, 48, TFT_RED, "OK", ""},   
   {FIELD_BUTTON, 24, 248, 96, 48, TFT_RED, "DELETE", ""},   
   {FIELD_BUTTON, 24, 248, 96, 48, TFT_BLACK, "CLOSE", ""},   

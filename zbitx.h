@@ -6,6 +6,15 @@
 // console message and shown in the Setup window.
 #define ZBITX_PANEL_VERSION "5.15f"
 
+// Software update lock (MENU -> UPDATE), see update_lock_screen() in fields.ino
+#define UPD_IDLE    0
+#define UPD_RUNNING 1   // Pi is running ~/sbitx/update; panel is locked
+#define UPD_DONE    2   // update finished, Pi is rebooting
+#define UPD_FAILED  3   // update failed; CLOSE unlocks the panel
+#define UPD_BACK    4   // new software has started; unlock
+extern volatile int update_state;
+void update_lock_screen(bool start);
+
 #define ZBITX_FONT_SMALL 1
 #define ZBITX_FONT_NORMAL 2
 #define ZBITX_FONT_LARGE 4 

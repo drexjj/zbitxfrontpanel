@@ -19,6 +19,13 @@ extern volatile int vswr, vfwd, vref, vbatt;
 // field_draw_all() regardless of which screen is showing.
 static bool in_dialog = false;
 
+// Software update (MENU -> UPDATE). update_state is driven by the Pi's
+// {UPD_STATE ...} pushes; while it is UPD_RUNNING the panel sits in
+// update_lock_screen() and ignores touch and the encoder.
+volatile int update_state = UPD_IDLE;
+static bool update_locked = false;
+static unsigned long update_last_heard = 0;
+
 
 //void field_draw(struct field *f, bool all);
 
@@ -146,6 +153,13 @@ struct field *dialog_box(const char *title, char const *fields_list){
 		if (f_touched && f_touched->type == FIELD_BUTTON){
 			break;	
 		}
+		// An update has started while this dialog was open: close it so
+		// loop() can put up the update lock screen. Callers treat NULL as
+		// "closed without a choice".
+		if (update_state == UPD_RUNNING && !update_locked){
+			f_touched = NULL;
+			break;
+		}
 		delay(10);
 	}
 	in_dialog = false;  // back to a normal panel; meter may draw again
@@ -167,6 +181,116 @@ struct field *dialog_box(const char *title, char const *fields_list){
 	field_draw_all(1);
 	f_selected = f_original_selection;
 	return f_touched;
+}
+
+/* Software update lock screen. Shown from OK on the update confirm screen
+ * (start = true, which also sends UPDATE to the Pi), or from loop() when the
+ * Pi reports an update is running (start = false: the panel was reset during
+ * an update, or it was started some other way).
+ *
+ * Touch and the encoder are ignored: unlike dialog_box() this loop never
+ * calls ui_slice(), it only processes the Pi's messages and redraws. It
+ * returns when:
+ *   - the new software has started after the reboot (UPD_BACK), or
+ *   - the user taps CLOSE, which is shown only if the update failed, the Pi
+ *     has gone quiet for 2 minutes mid-update, or the radio hasn't come back
+ *     5 minutes after the reboot. */
+void update_lock_screen(bool start){
+	if (update_locked)
+		return;
+	update_locked = true;
+	update_last_heard = millis();
+
+	if (start){
+		update_state = UPD_RUNNING;
+		field_set("UPD_STAT", "Starting the update...\nDo not power off the radio.", false);
+		strcpy(message_buffer, "UPDATE\n");
+	}
+
+	for (struct field *f = field_list; f->type != -1; f++)
+		f->is_visible = false;
+	field_set("TITLE", "Updating software", false);
+	field_show("TITLE", true);
+	field_show("UPD_CUR", true);
+	field_show("UPD_NEW", true);
+	field_show("UPD_STAT", true);
+	screen_fill_rect(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, SCREEN_BACKGROUND_COLOR);
+	screen_fill_rect(0, 30, SCREEN_WIDTH, 1, TFT_WHITE);
+	f_selected = NULL;
+	in_dialog = true;
+
+	struct field *f_close = field_get("CLOSE");
+	bool can_close = false;
+	while (1){
+		now = millis();
+		while (q_length(&q_incoming))
+			command_tokenize((char)q_read(&q_incoming));
+		if (update_state == UPD_BACK)
+			break;
+
+		unsigned long quiet = now - update_last_heard;
+		bool want_close = false;
+		if (update_state == UPD_FAILED)
+			want_close = true;
+		else if (update_state == UPD_RUNNING && quiet > 120000UL){
+			if (!can_close)
+				field_set("UPD_STAT",
+					"No word from the radio for 2 minutes.\n"
+					"The update may still be running.\n"
+					"Wait, or close and check the radio.", false);
+			want_close = true;
+		}
+		else if (update_state == UPD_DONE && quiet > 300000UL){
+			if (!can_close)
+				field_set("UPD_STAT",
+					"The radio hasn't come back after the\n"
+					"reboot. Check it over the network,\n"
+					"or power it off and on again.", false);
+			want_close = true;
+		}
+		if (want_close != can_close){
+			// Show CLOSE, or take it away again if the Pi starts talking.
+			can_close = want_close;
+			if (f_close){
+				field_show("CLOSE", can_close);
+				if (!can_close)
+					screen_fill_rect(f_close->x, f_close->y, f_close->w, f_close->h,
+						SCREEN_BACKGROUND_COLOR);
+			}
+		}
+
+		field_draw_all(false);
+		measure_voltages();
+
+		uint16_t x, y;
+		if (can_close && screen_read(&x, &y)){
+			struct field *f = field_at(x, y);
+			if (f && f == f_close){
+				// The finger is still down: mark it, so the main panel doesn't
+				// read this same touch as a tap on whatever sits under CLOSE.
+				mouse_down = true;
+				break;
+			}
+		}
+		delay(10);
+	}
+
+	// Back to the normal panel, the same way dialog_box() leaves.
+	if (update_state == UPD_BACK)
+		strcpy(message_buffer, "SYNC\n");  // pick up the new software's settings
+	update_state = UPD_IDLE;
+	in_dialog = false;
+	screen_fill_rect(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, SCREEN_BACKGROUND_COLOR);
+	field_set_panel(field_get("MODE")->value);
+	edit_mode = -1;
+	struct field *f_wf_restore = field_get("WF");
+	if (f_wf_restore){
+		f_wf_restore->is_visible = true;
+		f_wf_restore->redraw = true;
+	}
+	field_draw_all(1);
+	f_selected = NULL;
+	update_locked = false;
 }
 
 void field_set_panel(const char *mode){
@@ -246,8 +370,30 @@ void field_set(const char *label, const char *value, bool update_to_radio){
     }
     return;
   }
+  // UPD_STATE is not a field: it drives the update lock (RUNNING is also the
+  // Pi's once-a-second heartbeat while the update runs).
+  else if (!strcmp(label, "UPD_STATE")){
+    update_last_heard = millis();
+    if (!strcmp(value, "RUNNING"))
+      update_state = UPD_RUNNING;
+    else if (!strcmp(value, "DONE"))
+      update_state = UPD_DONE;
+    else if (!strcmp(value, "FAIL"))
+      update_state = UPD_FAILED;
+    return;
+  }
   else
     f = field_get(label);
+
+  if (!strncmp(label, "UPD_", 4))
+    update_last_heard = millis();
+  // The Pi pushes PIVERSION when the zBitx software starts. Seen while the
+  // panel is locked for an update, it means the radio is back after the
+  // reboot (or, with older Pi software that sends no UPD_STATE DONE, simply
+  // restarted), so the lock can come off.
+  if (!strcmp(label, "PIVERSION") && update_locked &&
+      (update_state == UPD_RUNNING || update_state == UPD_DONE))
+    update_state = UPD_BACK;
 
   if (!f)
     return;
@@ -399,22 +545,24 @@ struct field *field_select(const char *label){
 				strcpy(message_buffer, "SHUTDOWN\n");
 			}
 		}
-		// UPDATE runs the Pi's ~/sbitx/update script (git pull + rebuild),
-		// after a confirmation. The Pi reboots itself when the build succeeds.
+		// UPDATE: confirm screen showing the installed and available
+		// versions (the Pi fills them in after UPDCHECK; it fetches from
+		// GitHub, so "Available" can take a few seconds). OK starts the
+		// update and locks the panel until the radio has rebooted.
 		else if (choice && !strcmp(choice->label, "UPDATE")){
-			dialog_message =
-				"Download and\n"
-				"rebuild the zBitx\n"
-				"software? Takes\n"
-				"several minutes.\n"
-				"Keep Wi-Fi and\n"
-				"power on. The\n"
-				"radio reboots\n"
-				"when done.";
-			struct field *confirm = dialog_box("Update software?", "OK/CANCEL");
-			dialog_message = NULL;
+			update_state = UPD_IDLE;
+			field_set("UPD_CUR", "Installed: ---", false);
+			field_set("UPD_NEW", "Available: checking...", false);
+			field_set("UPD_STAT",
+				"Downloads and rebuilds the zBitx software.\n"
+				"This takes several minutes, and the\n"
+				"radio can't be used until it restarts.\n"
+				"Keep Wi-Fi and power on.", false);
+			strcpy(message_buffer, "UPDCHECK\n");
+			struct field *confirm = dialog_box("Update software?",
+				"UPD_CUR/UPD_NEW/UPD_STAT/OK/CANCEL");
 			if (confirm && !strcmp(confirm->label, "OK"))
-				strcpy(message_buffer, "UPDATE\n");
+				update_lock_screen(true);
 		}
 		// SETUP opens the station settings menu (callsign / grid / passkey).
 		// The MYCALLSIGN/MYGRID/PASSKEY fields post their own commands to the
@@ -594,6 +742,7 @@ struct field *field_select(const char *label){
   // unknown command to the Pi. The "WIFI" menu button is likewise handled by
   // the MENU dialog (it opens the Wi-Fi setup dialog), so exclude it too.
   if (!strcmp(f->label, "SHUTDOWN") || !strcmp(f->label, "UPDATE") ||
+      !strncmp(f->label, "UPD_", 4) ||
       !strcmp(f->label, "SETUP") ||
       !strcmp(f->label, "WIFI") || !strcmp(f->label, "USB") ||
       !strcmp(f->label, "SCAN") || !strcmp(f->label, "CONNECT") ||

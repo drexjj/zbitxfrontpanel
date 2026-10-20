@@ -440,6 +440,12 @@ void loop() {
 //    simulate_waterfall();
   ui_slice();
 
+  // The Pi reports a software update in progress (its heartbeat reached a
+  // panel that was reset mid-update, or the update came from elsewhere):
+  // lock the panel until it finishes.
+  if (update_state == UPD_RUNNING)
+    update_lock_screen(false);
+
   measure_voltages();
   delay(1);
 }
