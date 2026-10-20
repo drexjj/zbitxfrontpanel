@@ -554,10 +554,9 @@ struct field *field_select(const char *label){
 			field_set("UPD_CUR", "Installed: ---", false);
 			field_set("UPD_NEW", "Available: checking...", false);
 			field_set("UPD_STAT",
-				"Downloads and rebuilds the zBitx software.\n"
-				"This takes several minutes, and the\n"
-				"radio can't be used until it restarts.\n"
-				"Keep Wi-Fi and power on.", false);
++				"Press OK to start the software upgrade.\n"
++				"This takes several minutes and the radio\n"
++				"will restart itself when completed.", false);
 			strcpy(message_buffer, "UPDCHECK\n");
 			struct field *confirm = dialog_box("Update software?",
 				"UPD_CUR/UPD_NEW/UPD_STAT/OK/CANCEL");

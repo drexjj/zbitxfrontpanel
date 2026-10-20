@@ -4,7 +4,7 @@
 
 // Front-panel firmware version. Used for the boot
 // console message and shown in the Setup window.
-#define ZBITX_PANEL_VERSION "5.15f"
+#define ZBITX_PANEL_VERSION "5.16f"
 
 // Software update lock (MENU -> UPDATE), see update_lock_screen() in fields.ino
 #define UPD_IDLE    0
