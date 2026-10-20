@@ -212,6 +212,9 @@ struct field main_list[] = {
   // WIFI button: opens the Wi-Fi setup dialog (must exist here as a field, or
   // dialog_box() can't show it).
   {FIELD_BUTTON, 228, 196, 96, 48,  TFT_BLUE, "WIFI", ""},
+  /* Software update button — only shown inside the MENU dialog, bottom row
+     between CLOSE and SHUTDOWN. Asks the Pi to run ~/sbitx/update. */
+  {FIELD_BUTTON, 228, 248, 96, 48,  TFT_DARKGREEN, "UPDATE", ""},
   /* Shutdown button — only shown inside the MENU dialog, lower-right corner */
   {FIELD_BUTTON, 360, 248, 96, 48,  TFT_RED, "SHUTDOWN", ""},
 

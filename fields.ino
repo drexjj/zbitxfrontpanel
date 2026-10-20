@@ -376,7 +376,7 @@ struct field *field_select(const char *label){
 		// opens, so newly added macros appear without a firmware change. The
 		// dialog loop processes the reply while it is open.
 		strcpy(message_buffer, "MACROLIST\n");
-		struct field *choice = dialog_box("Radio", "10M/12M/15M/17M/20M/30M/40M/60M/80M/VFO/SPLIT/RIT/1-TAP/SETUP/CW_INPUT/CW_DELAY/SIDETONE/MACRO/USB/OPTIONS/WIFI/SHUTDOWN/CLOSE");
+		struct field *choice = dialog_box("Radio", "10M/12M/15M/17M/20M/30M/40M/60M/80M/VFO/SPLIT/RIT/1-TAP/SETUP/CW_INPUT/CW_DELAY/SIDETONE/MACRO/USB/OPTIONS/WIFI/UPDATE/SHUTDOWN/CLOSE");
 		if (choice && !strcmp(choice->label, "SHUTDOWN")){
 			// Ask the user to confirm before powering off, with a reminder to
 			// close remote sessions and wait for the LED. dialog_message is
@@ -398,6 +398,23 @@ struct field *field_select(const char *label){
 				// something like: system("sudo poweroff");
 				strcpy(message_buffer, "SHUTDOWN\n");
 			}
+		}
+		// UPDATE runs the Pi's ~/sbitx/update script (git pull + rebuild),
+		// after a confirmation. The Pi reboots itself when the build succeeds.
+		else if (choice && !strcmp(choice->label, "UPDATE")){
+			dialog_message =
+				"Download and\n"
+				"rebuild the zBitx\n"
+				"software? Takes\n"
+				"several minutes.\n"
+				"Keep Wi-Fi and\n"
+				"power on. The\n"
+				"radio reboots\n"
+				"when done.";
+			struct field *confirm = dialog_box("Update software?", "OK/CANCEL");
+			dialog_message = NULL;
+			if (confirm && !strcmp(confirm->label, "OK"))
+				strcpy(message_buffer, "UPDATE\n");
 		}
 		// SETUP opens the station settings menu (callsign / grid / passkey).
 		// The MYCALLSIGN/MYGRID/PASSKEY fields post their own commands to the
@@ -565,7 +582,7 @@ struct field *field_select(const char *label){
 	}
 
   // emit the new value of the field to the radio
-  // SHUTDOWN must never be auto-posted — the I2C message is sent only
+  // SHUTDOWN and UPDATE must never be auto-posted — the I2C message is sent only
   // after the user confirms on the second dialog (see the MENU handler above).
   // SETUP must never be auto-posted either — the station settings are set
   // directly by the MYCALLSIGN/MYGRID/PASSKEY field edits (each keystroke
@@ -576,7 +593,8 @@ struct field *field_select(const char *label){
   // strings itself. Posting "SCAN"/"CONNECT"/"DISCONN" would just be an
   // unknown command to the Pi. The "WIFI" menu button is likewise handled by
   // the MENU dialog (it opens the Wi-Fi setup dialog), so exclude it too.
-  if (!strcmp(f->label, "SHUTDOWN") || !strcmp(f->label, "SETUP") ||
+  if (!strcmp(f->label, "SHUTDOWN") || !strcmp(f->label, "UPDATE") ||
+      !strcmp(f->label, "SETUP") ||
       !strcmp(f->label, "WIFI") || !strcmp(f->label, "USB") ||
       !strcmp(f->label, "SCAN") || !strcmp(f->label, "CONNECT") ||
       !strcmp(f->label, "DISCONN"))
