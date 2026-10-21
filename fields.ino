@@ -204,7 +204,7 @@ void update_lock_screen(bool start){
 	if (start){
 		update_state = UPD_RUNNING;
 		field_set("UPD_STAT", "Starting the update...\nDo not power off the radio.", false);
-		strcpy(message_buffer, "UPDATE\n");
+		strcpy(message_buffer, "UPDATE " ZBITX_PANEL_VERSION "\n");
 	}
 
 	for (struct field *f = field_list; f->type != -1; f++)
@@ -213,6 +213,7 @@ void update_lock_screen(bool start){
 	field_show("TITLE", true);
 	field_show("UPD_CUR", true);
 	field_show("UPD_NEW", true);
+	field_show("UPD_PNL", true);
 	field_show("UPD_STAT", true);
 	screen_fill_rect(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, SCREEN_BACKGROUND_COLOR);
 	screen_fill_rect(0, 30, SCREEN_WIDTH, 1, TFT_WHITE);
@@ -564,9 +565,12 @@ struct field *field_select(const char *label){
 				"Press OK to start the software upgrade.\n"
 				"This takes several minutes and the radio\n"
 				"will restart itself when completed.", false);
-			strcpy(message_buffer, "UPDCHECK\n");
+			field_set("UPD_PNL", "Front panel: " ZBITX_PANEL_VERSION, false);
+			// The panel's version goes with the request, so the Pi can say
+			// whether new panel firmware will be installed too.
+			strcpy(message_buffer, "UPDCHECK " ZBITX_PANEL_VERSION "\n");
 			struct field *confirm = dialog_box("Update software?",
-				"UPD_CUR/UPD_NEW/UPD_STAT/OK/CANCEL");
+				"UPD_CUR/UPD_NEW/UPD_PNL/UPD_STAT/OK/CANCEL");
 			if (confirm && !strcmp(confirm->label, "OK"))
 				update_lock_screen(true);
 		}
