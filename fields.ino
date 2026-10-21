@@ -225,6 +225,7 @@ void update_lock_screen(bool start){
 		now = millis();
 		while (q_length(&q_incoming))
 			command_tokenize((char)q_read(&q_incoming));
+		fw_poll();   // the Pi may flash the panel as part of the update
 		if (update_state == UPD_BACK)
 			break;
 
@@ -368,6 +369,12 @@ void field_set(const char *label, const char *value, bool update_to_radio){
       if (!found && first) strcpy(mf->value, first);
       mf->redraw = true;
     }
+    return;
+  }
+  // FWQUERY: the Pi asks whether this firmware can be updated over I2C. The
+  // answer goes back on the next I2C read (see fw_update.ino / fw_proto.h).
+  else if (!strcmp(label, "FWQUERY")){
+    fwp_query();
     return;
   }
   // UPD_STATE is not a field: it drives the update lock (RUNNING is also the

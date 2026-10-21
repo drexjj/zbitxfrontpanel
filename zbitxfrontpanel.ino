@@ -11,6 +11,7 @@ The blink.ino should work (note that the pico w and pico have different gpios fo
 #include <TFT_eSPI.h>
 #include <Wire.h>
 #include "zbitx.h"
+#include "fw_proto.h"
 extern "C" {
 #include "pico.h"
 #include "pico/time.h"
@@ -213,6 +214,14 @@ void wire_text(char *text){
 char buff_i2c_req[200];
 void on_request(){
   char c;
+  // A front-panel firmware update is running (or FWQUERY was asked): every
+  // read gets its status instead of the normal panel data. See fw_proto.h.
+  const char *fw_status = fwp_isr_status();
+  if (fw_status){
+    strcpy(buff_i2c_req, fw_status);
+    wire_text(buff_i2c_req);
+    return;
+  }
   //just update a single field, buttons first
 	if (message_buffer[0] != 0){
     strcpy(buff_i2c_req, message_buffer);
@@ -256,6 +265,21 @@ int dcount = 0;
 void on_receive(int len){
   uint8_t r;
   dcount += len;
+  // Binary firmware-update frames use their own I2C command byte; hand them
+  // to the update code instead of the text command queue.
+  if (len > 0 && Wire1.peek() == FWP_CMD){
+    uint8_t frame[FWP_FRAME_MAX + 1];
+    int n = 0;
+    Wire1.read();
+    len--;
+    while (len-- > 0){
+      int c = Wire1.read();
+      if (n < (int)sizeof(frame))
+        frame[n++] = (uint8_t)c;
+    }
+    fwp_isr_receive(frame, n);   // drops anything over FWP_FRAME_MAX
+    return;
+  }
   while(len--){
     q_write(&q_incoming, (int32_t)Wire1.read());
 	}
@@ -313,6 +337,8 @@ struct field *ui_slice(){
 	//check if messages need to be processed
   while(q_length(&q_incoming))
     command_tokenize((char)q_read(&q_incoming));
+	// front-panel firmware update from the Pi (takes over if one starts)
+	fw_poll();
 	if (now > last_blink + BLINK_RATE){
 		field_blink(-1);
 		last_blink = now;
