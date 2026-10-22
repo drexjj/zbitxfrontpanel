@@ -427,8 +427,8 @@ void setup() {
 	attachInterrupt(ENC_A, on_enc, CHANGE);
 	attachInterrupt(ENC_B, on_enc, CHANGE);
 
-	// Boot banner: no version here. The panel version is shown in the Radio ->
-	// Setup window (the PANELVER field), not written to the console.
+	// Boot banner: no version here. The panel version is shown in the
+	// Menu -> UPDATE window, not written to the console.
 	field_set("9", "Waiting for the zBitx to start...\n", false);
 
 	// Ask the Pi to push every field. If the Pi software is already running

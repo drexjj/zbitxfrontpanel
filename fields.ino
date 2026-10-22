@@ -146,7 +146,7 @@ struct field *dialog_box(const char *title, char const *fields_list){
 	while(1){	
 		f_touched = ui_slice();
 		// Process any messages the Pi pushes while the dialog is open (e.g. the
-		// {PIVERSION ...} reply to a VERSION request). Without this the incoming
+		// UPD_* replies to the UPDATE window's UPDCHECK request). Without this the incoming
 		// queue only drains in loop(), which is blocked while we're modal here.
 		while (q_length(&q_incoming))
 			command_tokenize((char)q_read(&q_incoming));
@@ -395,7 +395,9 @@ void field_set(const char *label, const char *value, bool update_to_radio){
 
   if (!strncmp(label, "UPD_", 4))
     update_last_heard = millis();
-  // The Pi pushes PIVERSION when the zBitx software starts. Seen while the
+  // The Pi pushes PIVERSION when the zBitx software starts. There is no
+  // PIVERSION field any more, so this check must stay above the field lookup.
+  // Seen while the
   // panel is locked for an update, it means the radio is back after the
   // reboot (or, with older Pi software that sends no UPD_STATE DONE, simply
   // restarted), so the lock can come off.
@@ -580,11 +582,8 @@ struct field *field_select(const char *label){
 		// GTK settings dialog is intentionally NOT opened (SETUP is excluded
 		// from auto-posting in field_select, so no "SETUP" command is sent).
 		else if (choice && !strcmp(choice->label, "SETUP")){
-			// Fill in the panel's own version, and ask the Pi for its version
-			// (it replies by pushing {PIVERSION ...} into that field).
-			field_set("PANELVER", "Panel version: " ZBITX_PANEL_VERSION, false);
-			strcpy(message_buffer, "VERSION\n");
-			dialog_box("Setup", "MY CALL/MYCALLSIGN/MY GRID/MYGRID/PASS KEY/PASSKEY/PANELVER/PIVERSION/CLOSE");
+			// The software and panel versions are shown in the UPDATE window.
+			dialog_box("Setup", "MY CALL/MYCALLSIGN/MY GRID/MYGRID/PASS KEY/PASSKEY/CLOSE");
 		}
 		// USB toggles the Pi's USB port between CAT and Mouse/Keyboard mode by
 		// running /home/pi/usb-mode. We just fire the command; the Pi reads the
