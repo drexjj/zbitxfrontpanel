@@ -3,6 +3,7 @@
 #include "logbook.h"
 #include "ft8.h"
 #include "text_field.h"
+void menu_draw(struct field *f);
 #include "fields_list.h"
 #include "console.h"
 
@@ -459,6 +460,12 @@ void field_set(const char *label, const char *value, bool update_to_radio){
     f->value[FIELD_TEXT_MAX_LENGTH - 1] = 0;
     if (changed && !strcmp(f->label, "FT8_FILTER"))
       ft8_filter_changed();
+    // the clock is drawn on the MENU button, so repaint that when it ticks
+    if (changed && !strcmp(f->label, "CLOCK")){
+      struct field *menu = field_get("MENU");
+      if (menu)
+        menu->redraw = true;
+    }
   }
   f->redraw = true;
 }
@@ -983,6 +990,30 @@ void smeter_draw(struct field *f){
 		screen_draw_text(temp_str, -1, f->x + 5 + (i * 20), f->y+7, TFT_WHITE, 1);
 		//screen_draw_text(temp_str, -1, f->x + 130, f->y+6, TFT_WHITE, 1);
 	}
+}
+
+// MENU button with the UTC clock (from the hidden CLOCK field) underneath
+// the label. The Pi also pushes its own MENU state ("OFF"/"1"/"2") into this
+// field's value, which is why the clock lives in a separate field.
+void menu_draw(struct field *f){
+	screen_fill_round_rect(f->x+2, f->y+2, f->w-4, f->h-4, f->color_scheme);
+	screen_draw_round_rect(f->x+2, f->y+2, f->w-4, f->h-4,
+		f == f_selected ? TFT_WHITE : TFT_DARKGREY);
+
+	char label[] = "MENU";
+	screen_draw_text(label, -1, f->x + (f->w - screen_text_width(label, ZBITX_FONT_NORMAL))/2,
+		f->y + 6, TFT_CYAN, ZBITX_FONT_NORMAL);
+
+	struct field *clk = field_get("CLOCK");
+	char t[FIELD_TEXT_MAX_LENGTH];
+	strncpy(t, clk ? clk->value : "--:--", sizeof(t) - 1);
+	t[sizeof(t) - 1] = 0;
+	// fall back to the small font if the time doesn't fit inside the button
+	uint8_t font = ZBITX_FONT_NORMAL;
+	if (screen_text_width(t, font) > f->w - 8)
+		font = ZBITX_FONT_SMALL;
+	screen_draw_text(t, -1, f->x + (f->w - screen_text_width(t, font))/2,
+		f->y + 24, TFT_WHITE, font);
 }
 
 void field_static_draw(field *f){

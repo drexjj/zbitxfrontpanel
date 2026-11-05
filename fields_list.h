@@ -12,7 +12,9 @@ struct field main_list[] = {
   // the panel — it's reached through the MENU dialog (see the MENU handler),
   // since it's toggled far less often than drive/IF. FREQ keeps its 192px
   // width and x=240 anchor (freq_draw / the METERS overlay depend on it).
-  {FIELD_BUTTON, 0, 0, 48, 48,  TFT_ORANGE, "MENU", "-" },
+  // MENU also shows the UTC clock under its label (menu_draw in fields.ino),
+  // read from the hidden CLOCK field that the Pi pushes once a minute.
+  {FIELD_BUTTON, 0, 0, 48, 48,  TFT_ORANGE, "MENU", "-", "", menu_draw},
   {FIELD_SELECTION, 48, 0, 64, 48,  TFT_BLACK, "MODE", "USB", "USB/LSB/CW/CWR/FT8/AM/DIGI/2TONE"},
   {FIELD_NUMBER, 112, 0, 64, 48,  TFT_BLACK, "DRIVE", "100", "0/100/5"},
   {FIELD_NUMBER, 176, 0, 64, 48,  TFT_BLACK, "IF", "40", "0/100/1"},
@@ -159,7 +161,9 @@ struct field main_list[] = {
   /* These fields are never visible */
   {FIELD_KEY, 20000, 20000, 0, 0,  TFT_BLACK, "VFOA", "14074000"},  
   {FIELD_KEY, 20000, 20000, 0, 0,  TFT_BLACK, "VFOB", "7050000"},      
-  {FIELD_KEY, 20000, 20000, 0, 0,  TFT_BLACK, "RIT_DELTA", "0", "-25000/25000/1"},      
+  {FIELD_KEY, 20000, 20000, 0, 0,  TFT_BLACK, "RIT_DELTA", "0", "-25000/25000/1"},
+  // UTC time "HH:MM", pushed by the Pi as {CLOCK HH:MM}. Shown on the MENU button.
+  {FIELD_KEY, 20000, 20000, 0, 0,  TFT_BLACK, "CLOCK", "--:--"},      
 
 	{FIELD_STATIC, 24, 96, SCREEN_WIDTH-96,  100, TFT_BLACK, "QSODEL", "0", ""}, 	
 
